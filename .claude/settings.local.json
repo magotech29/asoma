@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\api\\\\stamps\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\api\\\\courses\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\api\\\\spots\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\api\\\\apply\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\api\\\\admin\\\\login\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\api\\\\admin\\\\logout\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\api\\\\admin\\\\courses\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\api\\\\admin\\\\spots\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\api\\\\admin\\\\events\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\stamps\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\scan\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\apply\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\complete\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\components\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\admin\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\admin\\\\login\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\admin\\\\courses\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\admin\\\\spots\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\admin\\\\qrcodes\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\admin\\\\settings\")"
+    ]
+  }
+}
