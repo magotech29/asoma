@@ -52,7 +52,9 @@ export default function ScanPage() {
 
     return () => {
       if (scannerRef.current) {
-        scannerRef.current.stop().catch(() => {});
+        try {
+          scannerRef.current.stop().catch(() => {});
+        } catch { /* already stopped */ }
       }
     };
   }, []);
