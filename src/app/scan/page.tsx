@@ -33,13 +33,21 @@ export default function ScanPage() {
             setScanning(false);
             try { await scanner.stop(); } catch { /* already stopped */ }
 
-            const res = await fetch("/api/stamps", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ qrToken: decodedText }),
-            });
-            const data: ScanResult = await res.json();
-            setResult(data);
+            try {
+              const res = await fetch("/api/stamps", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ qrToken: decodedText }),
+              });
+              if (!res.ok) {
+                setResult({ error: "サーバーエラーが発生しました" });
+                return;
+              }
+              const data: ScanResult = await res.json();
+              setResult(data);
+            } catch {
+              setResult({ error: "通信エラーが発生しました" });
+            }
           },
           () => {}
         );
@@ -78,15 +86,13 @@ export default function ScanPage() {
               <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6">
                 <p className="text-5xl mb-3">🎉</p>
                 <p className="text-xl font-bold text-emerald-700 mb-1">スタンプ取得！</p>
-                <p className="text-gray-600 mb-6">
-                  <strong>{result.spotName}</strong> のスタンプをゲットしました
-                </p>
+                <p className="text-gray-600 mb-6"><strong>{result.spotName}</strong> のスタンプをゲットしました</p>
                 <div className="flex flex-col gap-2">
                   <Link href="/stamps" className="block bg-emerald-500 text-white text-center py-3 rounded-xl font-semibold">
                     スタンプ帳を確認
                   </Link>
                   <button
-                    onClick={() => { setResult(null); setScanning(true); window.location.reload(); }}
+                    onClick={() => window.location.reload()}
                     className="block bg-white border border-gray-200 text-gray-600 py-3 rounded-xl w-full"
                   >
                     続けてスキャン
@@ -98,9 +104,7 @@ export default function ScanPage() {
               <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6">
                 <p className="text-5xl mb-3">✅</p>
                 <p className="text-xl font-bold text-amber-700 mb-1">取得済みです</p>
-                <p className="text-gray-600 mb-6">
-                  <strong>{result.spotName}</strong> はすでにスタンプ済みです
-                </p>
+                <p className="text-gray-600 mb-6"><strong>{result.spotName}</strong> はすでにスタンプ済みです</p>
                 <Link href="/stamps" className="block bg-amber-500 text-white text-center py-3 rounded-xl font-semibold">
                   スタンプ帳を確認
                 </Link>
@@ -109,9 +113,9 @@ export default function ScanPage() {
             {result.error && (
               <div className="bg-red-50 border border-red-200 rounded-2xl p-6">
                 <p className="text-5xl mb-3">❌</p>
-                <p className="text-gray-600 mb-4">QRコードが無効です</p>
+                <p className="text-gray-600 mb-4">{result.error}</p>
                 <button
-                  onClick={() => { setResult(null); window.location.reload(); }}
+                  onClick={() => window.location.reload()}
                   className="bg-gray-200 text-gray-700 py-3 px-6 rounded-xl"
                 >
                   もう一度試す
@@ -123,9 +127,7 @@ export default function ScanPage() {
           <div className="w-full max-w-sm">
             <p className="text-center text-gray-500 mb-4">スポットのQRコードにカメラを向けてください</p>
             <div id="qr-reader" className="rounded-xl overflow-hidden" />
-            {scanning && (
-              <p className="text-center text-sm text-gray-400 mt-3">スキャン中...</p>
-            )}
+            {scanning && <p className="text-center text-sm text-gray-400 mt-3">スキャン中...</p>}
           </div>
         )}
       </main>

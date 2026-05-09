@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 export default function ApplyPage() {
   const [name, setName] = useState("");
@@ -11,26 +10,30 @@ export default function ApplyPage() {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
 
-    const res = await fetch("/api/apply", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, contact, message }),
-    });
+    try {
+      const res = await fetch("/api/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, contact, message }),
+      });
 
-    if (res.ok) {
-      setDone(true);
-    } else {
-      const data = await res.json();
-      setError(data.error ?? "送信に失敗しました");
+      if (res.ok) {
+        setDone(true);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "送信に失敗しました");
+      }
+    } catch {
+      setError("通信エラーが発生しました。もう一度お試しください。");
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitting(false);
   };
 
   if (done) {
@@ -101,9 +104,7 @@ export default function ApplyPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">
-              ひとこと（任意）
-            </label>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">ひとこと（任意）</label>
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
@@ -113,9 +114,7 @@ export default function ApplyPage() {
             />
           </div>
 
-          {error && (
-            <p className="text-red-500 text-sm">{error}</p>
-          )}
+          {error && <p className="text-red-500 text-sm">{error}</p>}
 
           <button
             type="submit"

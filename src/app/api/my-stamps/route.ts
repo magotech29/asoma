@@ -6,24 +6,23 @@ import { eq } from "drizzle-orm";
 import { SESSION_COOKIE } from "@/lib/session";
 
 export async function GET() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE)?.value;
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get(SESSION_COOKIE)?.value;
+    if (!token) return NextResponse.json([]);
 
-  if (!token) {
-    return NextResponse.json([]);
+    const participant = await db.query.participants.findFirst({
+      where: eq(participants.sessionToken, token),
+    });
+    if (!participant) return NextResponse.json([]);
+
+    const logs = await db.query.stampLogs.findMany({
+      where: eq(stampLogs.participantId, participant.id),
+    });
+
+    return NextResponse.json(logs.map((l) => l.spotId));
+  } catch (e) {
+    console.error(e);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  const participant = await db.query.participants.findFirst({
-    where: eq(participants.sessionToken, token),
-  });
-
-  if (!participant) {
-    return NextResponse.json([]);
-  }
-
-  const logs = await db.query.stampLogs.findMany({
-    where: eq(stampLogs.participantId, participant.id),
-  });
-
-  return NextResponse.json(logs.map((l) => l.spotId));
 }

@@ -3,13 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-type Spot = {
-  id: string;
-  name: string;
-  description: string | null;
-  sortOrder: number;
-};
-
+type Spot = { id: string; name: string; description: string | null; sortOrder: number };
 type Course = {
   id: string;
   name: string;
@@ -22,15 +16,17 @@ type Course = {
 export default function Home() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     fetch("/api/courses")
-      .then((r) => r.json())
-      .then((data) => {
-        setCourses(Array.isArray(data) ? data : []);
-        setLoading(false);
+      .then((r) => {
+        if (!r.ok) throw new Error(`${r.status}`);
+        return r.json();
       })
-      .catch(() => setLoading(false));
+      .then((data) => setCourses(Array.isArray(data) ? data : []))
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
   }, []);
 
   return (
@@ -59,10 +55,10 @@ export default function Home() {
           <h2 className="text-lg font-bold text-gray-800 mb-3">コース一覧</h2>
           {loading ? (
             <p className="text-gray-400 text-center py-8">読み込み中...</p>
+          ) : error ? (
+            <p className="text-red-400 text-center py-8">読み込みに失敗しました</p>
           ) : courses.length === 0 ? (
-            <p className="text-gray-400 text-center py-8">
-              現在開催中のコースはありません
-            </p>
+            <p className="text-gray-400 text-center py-8">現在開催中のコースはありません</p>
           ) : (
             <ul className="space-y-3">
               {courses.map((course) => (
