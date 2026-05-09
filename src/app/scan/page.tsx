@@ -31,7 +31,7 @@ export default function ScanPage() {
           { fps: 10, qrbox: { width: 250, height: 250 } },
           async (decodedText: string) => {
             setScanning(false);
-            await scanner.stop();
+            try { await scanner.stop(); } catch { /* already stopped */ }
 
             const res = await fetch("/api/stamps", {
               method: "POST",
