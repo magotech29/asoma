@@ -8,6 +8,7 @@ import {
   uuid,
   pgEnum,
 } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 
 export const userRoleEnum = pgEnum("user_role", ["admin", "spot_admin"]);
 export const appStatusEnum = pgEnum("prize_status", ["pending", "won", "lost"]);
@@ -124,3 +125,50 @@ export const prizeApplications = pgTable("prize_applications", {
   status: appStatusEnum("status").notNull().default("pending"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+// ── リレーション定義 ───────────────────────────────────────
+export const tenantsRelations = relations(tenants, ({ many }) => ({
+  users: many(users),
+  events: many(events),
+  courses: many(courses),
+  spots: many(spots),
+  participants: many(participants),
+}));
+
+export const eventsRelations = relations(events, ({ one, many }) => ({
+  tenant: one(tenants, { fields: [events.tenantId], references: [tenants.id] }),
+  courses: many(courses),
+}));
+
+export const coursesRelations = relations(courses, ({ one, many }) => ({
+  tenant: one(tenants, { fields: [courses.tenantId], references: [tenants.id] }),
+  event: one(events, { fields: [courses.eventId], references: [events.id] }),
+  spots: many(spots),
+}));
+
+export const spotsRelations = relations(spots, ({ one, many }) => ({
+  course: one(courses, { fields: [spots.courseId], references: [courses.id] }),
+  tenant: one(tenants, { fields: [spots.tenantId], references: [tenants.id] }),
+  stampLogs: many(stampLogs),
+}));
+
+export const participantsRelations = relations(participants, ({ one, many }) => ({
+  tenant: one(tenants, { fields: [participants.tenantId], references: [tenants.id] }),
+  stampLogs: many(stampLogs),
+  prizeApplications: many(prizeApplications),
+}));
+
+export const stampLogsRelations = relations(stampLogs, ({ one }) => ({
+  participant: one(participants, { fields: [stampLogs.participantId], references: [participants.id] }),
+  spot: one(spots, { fields: [stampLogs.spotId], references: [spots.id] }),
+  tenant: one(tenants, { fields: [stampLogs.tenantId], references: [tenants.id] }),
+}));
+
+export const prizeApplicationsRelations = relations(prizeApplications, ({ one }) => ({
+  participant: one(participants, { fields: [prizeApplications.participantId], references: [participants.id] }),
+  tenant: one(tenants, { fields: [prizeApplications.tenantId], references: [tenants.id] }),
+}));
+
+export const usersRelations = relations(users, ({ one }) => ({
+  tenant: one(tenants, { fields: [users.tenantId], references: [tenants.id] }),
+}));
