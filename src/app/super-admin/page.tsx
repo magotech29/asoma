@@ -97,6 +97,19 @@ export default function SuperAdminPage() {
     alert("参加者URLをコピーしました");
   };
 
+  const enterAdmin = async (tenantId: string) => {
+    const res = await fetch("/api/super-admin/impersonate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tenantId }),
+    });
+    if (res.ok) {
+      router.push("/admin");
+    } else {
+      alert("管理画面への切り替えに失敗しました");
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-900 text-white">
       <header className="bg-gray-800 px-4 py-4 border-b border-gray-700 flex items-center justify-between">
@@ -213,12 +226,16 @@ export default function SuperAdminPage() {
                       </button>
                     </div>
                     <div className="flex gap-2 flex-wrap">
+                      <button onClick={() => enterAdmin(t.id)}
+                        className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-semibold">
+                        🔑 管理画面を開く
+                      </button>
                       <button onClick={() => copyParticipantUrl(t.tenantToken)}
-                        className="text-xs bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg">
+                        className="text-xs bg-gray-600 hover:bg-gray-500 text-white px-3 py-1.5 rounded-lg">
                         📋 参加者URL
                       </button>
                       <button onClick={() => copyAdminUrl(t.tenantToken)}
-                        className="text-xs bg-blue-700 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg">
+                        className="text-xs bg-gray-600 hover:bg-gray-500 text-white px-3 py-1.5 rounded-lg">
                         📋 管理者URL
                       </button>
                     </div>

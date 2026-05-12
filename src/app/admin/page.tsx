@@ -6,13 +6,18 @@ import { useRouter } from "next/navigation";
 
 export default function AdminDashboard() {
   const [checking, setChecking] = useState(true);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    fetch("/api/admin/stats")
-      .then((r) => {
+    Promise.all([
+      fetch("/api/admin/stats").then((r) => {
         if (r.status === 401) router.replace("/admin/login");
-      })
+        return r;
+      }),
+      fetch("/api/super-admin/tenants").then((r) => r.status !== 401),
+    ])
+      .then(([, isSuper]) => setIsSuperAdmin(!!isSuper))
       .catch(() => {})
       .finally(() => setChecking(false));
   }, [router]);
@@ -28,7 +33,7 @@ export default function AdminDashboard() {
     { href: "/admin/courses", icon: "🗺️", label: "コース管理", desc: "コースの追加・編集・削除" },
     { href: "/admin/spots", icon: "📍", label: "スポット管理", desc: "チェックポイントの管理" },
     { href: "/admin/qrcodes", icon: "🔲", label: "QRコード", desc: "QRコードの発行・印刷" },
-    { href: "/admin/settings", icon: "⚙️", label: "イベント設定", desc: "開催期間・イベント情報" },
+    { href: "/admin/settings", icon: "⚙️", label: "イベント管理", desc: "開催期間・コース構成" },
   ];
 
   if (checking) {
@@ -46,9 +51,19 @@ export default function AdminDashboard() {
           <h1 className="text-lg font-bold">管理画面</h1>
           <p className="text-gray-400 text-xs">ぐるっとスタンプラリー</p>
         </div>
-        <button onClick={handleLogout} className="text-sm text-gray-300 hover:text-white">
-          ログアウト
-        </button>
+        <div className="flex items-center gap-3">
+          {isSuperAdmin && (
+            <Link
+              href="/super-admin"
+              className="text-xs bg-gray-700 hover:bg-gray-600 text-emerald-400 px-3 py-1.5 rounded-lg"
+            >
+              ← スーパー管理者
+            </Link>
+          )}
+          <button onClick={handleLogout} className="text-sm text-gray-300 hover:text-white">
+            ログアウト
+          </button>
+        </div>
       </header>
 
       <main className="flex-1 px-4 py-6 max-w-lg mx-auto w-full">
