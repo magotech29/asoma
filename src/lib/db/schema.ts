@@ -17,8 +17,9 @@ export const appStatusEnum = pgEnum("prize_status", ["pending", "won", "lost"]);
 export const tenants = pgTable("tenants", {
   id: uuid("id").primaryKey().defaultRandom(),
   slug: text("slug").notNull().unique(),
-  tenantToken: text("tenant_token").notNull().unique(), // 参加者URL識別用8文字トークン
+  tenantToken: text("tenant_token").notNull().unique(), // 参加者・管理者URL識別用8文字トークン
   name: text("name").notNull(),
+  adminPasswordHash: text("admin_password_hash").notNull(), // コミュニティ管理者共通PW
   logoUrl: text("logo_url"),
   primaryColor: text("primary_color").default("#10b981"),
   isActive: boolean("is_active").notNull().default(true),
