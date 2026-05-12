@@ -32,43 +32,55 @@ function DateTimePicker({ value, onChange, label }: {
   onChange: (v: string) => void;
   label: string;
 }) {
-  const [datePart, timePart] = value ? value.split("T") : ["", ""];
-  const [h, m] = timePart ? timePart.split(":") : ["", ""];
+  const parse = (v: string) => {
+    const [d = "", t = ""] = v ? v.split("T") : [];
+    const [h = "", mm = ""] = t.split(":");
+    return { d, h, mm };
+  };
 
-  const update = (d: string, hour: string, min: string) => {
-    if (d && hour !== "" && min !== "") {
-      onChange(`${d}T${hour}:${min}`);
-    } else {
-      onChange("");
+  const { d: initD, h: initH, mm: initMm } = parse(value);
+  const [d, setD] = useState(initD);
+  const [h, setH] = useState(initH);
+  const [mm, setMm] = useState(initMm);
+
+  // 親のvalue変更（フォームリセット等）に追従
+  useEffect(() => {
+    const { d: nd, h: nh, mm: nmm } = parse(value);
+    setD(nd); setH(nh); setMm(nmm);
+  }, [value]);
+
+  const notify = (nd: string, nh: string, nmm: string) => {
+    if (nd && nh && nmm) {
+      onChange(`${nd}T${nh}:${nmm}`);
     }
   };
 
   return (
     <div className="flex-1">
       <label className="block text-xs text-gray-500 mb-1">{label}（日本時間）</label>
-      <div className="flex gap-1 items-center">
+      <div className="flex gap-1 items-center flex-wrap">
         <input
           type="date"
-          value={datePart ?? ""}
-          onChange={(e) => update(e.target.value, h ?? "", m ?? "")}
+          value={d}
+          onChange={(e) => { setD(e.target.value); notify(e.target.value, h, mm); }}
           className="flex-1 border border-gray-200 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 min-w-0"
         />
         <select
-          value={h ?? ""}
-          onChange={(e) => update(datePart ?? "", e.target.value, m ?? "00")}
+          value={h}
+          onChange={(e) => { setH(e.target.value); notify(d, e.target.value, mm); }}
           className="border border-gray-200 rounded-lg px-1 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
         >
-          <option value="">--</option>
+          <option value="">時</option>
           {HOURS.map((hh) => <option key={hh} value={hh}>{hh}</option>)}
         </select>
-        <span className="text-gray-400 text-sm">:</span>
+        <span className="text-gray-400 text-sm font-bold">:</span>
         <select
-          value={m ?? ""}
-          onChange={(e) => update(datePart ?? "", h ?? "00", e.target.value)}
+          value={mm}
+          onChange={(e) => { setMm(e.target.value); notify(d, h, e.target.value); }}
           className="border border-gray-200 rounded-lg px-1 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
         >
-          <option value="">--</option>
-          {MINUTES.map((mm) => <option key={mm} value={mm}>{mm}</option>)}
+          <option value="">分</option>
+          {MINUTES.map((m) => <option key={m} value={m}>{m}</option>)}
         </select>
       </div>
     </div>
