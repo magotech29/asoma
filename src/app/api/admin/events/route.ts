@@ -4,6 +4,12 @@ import { events } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { requireAdminTenant } from "@/lib/auth";
 
+function toDate(val: string | null | undefined): Date | null {
+  if (!val) return null;
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 export async function GET() {
   try {
     const tenant = await requireAdminTenant();
@@ -23,8 +29,15 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const tenant = await requireAdminTenant();
-    const body = await req.json();
-    const [created] = await db.insert(events).values({ ...body, tenantId: tenant.id }).returning();
+    const { name, description, startsAt, endsAt, isActive } = await req.json();
+    const [created] = await db.insert(events).values({
+      tenantId: tenant.id,
+      name,
+      description: description ?? null,
+      startsAt: toDate(startsAt),
+      endsAt: toDate(endsAt),
+      isActive: isActive ?? true,
+    }).returning();
     return NextResponse.json(created, { status: 201 });
   } catch (e: unknown) {
     if (e instanceof Error && e.message === "Unauthorized")
@@ -37,8 +50,15 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     await requireAdminTenant();
-    const { id, ...body } = await req.json();
-    const [updated] = await db.update(events).set(body).where(eq(events.id, id)).returning();
+    const { id, name, description, startsAt, endsAt, isActive } = await req.json();
+    const updateData: Record<string, unknown> = {};
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description ?? null;
+    if (startsAt !== undefined) updateData.startsAt = toDate(startsAt);
+    if (endsAt !== undefined) updateData.endsAt = toDate(endsAt);
+    if (isActive !== undefined) updateData.isActive = isActive;
+
+    const [updated] = await db.update(events).set(updateData).where(eq(events.id, id)).returning();
     return NextResponse.json(updated);
   } catch (e: unknown) {
     if (e instanceof Error && e.message === "Unauthorized")
