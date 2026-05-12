@@ -17,7 +17,7 @@ type EditForm = { name: string; adminPassword: string };
 export default function SuperAdminPage() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({ name: "", slug: "", adminPassword: "" });
+  const [form, setForm] = useState({ name: "", adminPassword: "" });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<EditForm>({ name: "", adminPassword: "" });
   const [submitting, setSubmitting] = useState(false);
@@ -49,7 +49,7 @@ export default function SuperAdminPage() {
         body: JSON.stringify(form),
       });
       if (res.ok) {
-        setForm({ name: "", slug: "", adminPassword: "" });
+        setForm({ name: "", adminPassword: "" });
         load();
       } else {
         const data = await res.json().catch(() => ({}));
@@ -109,58 +109,79 @@ export default function SuperAdminPage() {
 
       <main className="flex-1 px-4 py-6 max-w-2xl mx-auto w-full">
         {/* テナント追加フォーム */}
-        <div className="bg-gray-800 rounded-xl border border-gray-700 p-4 mb-6">
-          <h2 className="font-bold text-gray-200 mb-3">テナントを追加</h2>
-          <form onSubmit={handleCreate} className="space-y-3">
-            <div className="grid grid-cols-2 gap-2">
-              <input required placeholder="コミュニティ名"
-                value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        <div className="bg-gray-800 rounded-xl border border-gray-700 p-5 mb-6">
+          <h2 className="font-bold text-gray-200 mb-1">新しいコミュニティを追加</h2>
+          <p className="text-xs text-gray-500 mb-4">追加後、参加者URL・管理者URLが自動生成されます</p>
+          <form onSubmit={handleCreate} className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-1">
+                コミュニティ名 <span className="text-red-400">*</span>
+              </label>
+              <input
+                required
+                placeholder="例）春日市ウォーキングラリー"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
-              <input required placeholder="スラッグ（英数字）"
-                value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })}
-                className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
-              <input required type="password" placeholder="管理者パスワード"
-                value={form.adminPassword} onChange={(e) => setForm({ ...form, adminPassword: e.target.value })}
-                className="col-span-2 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-1">
+                管理者パスワード <span className="text-red-400">*</span>
+              </label>
+              <p className="text-xs text-gray-500 mb-1.5">このコミュニティの管理画面にログインするためのパスワードです</p>
+              <input
+                required
+                type="password"
+                autoComplete="new-password"
+                placeholder="8文字以上を推奨"
+                value={form.adminPassword}
+                onChange={(e) => setForm({ ...form, adminPassword: e.target.value })}
+                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>
             {error && <p className="text-red-400 text-sm">{error}</p>}
-            <button type="submit" disabled={submitting}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold py-2 rounded-lg text-sm">
-              {submitting ? "作成中..." : "テナントを作成"}
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold py-2.5 rounded-lg text-sm"
+            >
+              {submitting ? "作成中..." : "コミュニティを作成"}
             </button>
           </form>
         </div>
 
         {/* テナント一覧 */}
-        <h2 className="font-bold text-gray-300 mb-3">テナント一覧（{tenants.length}件）</h2>
+        <h2 className="font-bold text-gray-300 mb-3">コミュニティ一覧（{tenants.length}件）</h2>
         {loading ? (
           <p className="text-gray-400 text-center py-8">読み込み中...</p>
         ) : tenants.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">テナントがありません</p>
+          <p className="text-gray-500 text-center py-8">コミュニティがありません</p>
         ) : (
           <ul className="space-y-4">
             {tenants.map((t) => (
               <li key={t.id} className="bg-gray-800 rounded-xl border border-gray-700 p-4">
                 {editingId === t.id ? (
-                  /* 編集フォーム */
                   <div className="space-y-3">
-                    <p className="text-xs text-gray-400 font-mono">トークン: <span className="text-emerald-400">{t.tenantToken}</span></p>
-                    <input
-                      placeholder="コミュニティ名"
-                      value={editForm.name}
-                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    />
-                    <input
-                      type="password"
-                      placeholder="新しいパスワード（変更する場合のみ）"
-                      value={editForm.adminPassword}
-                      onChange={(e) => setEditForm({ ...editForm, adminPassword: e.target.value })}
-                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    />
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-400 mb-1">コミュニティ名</label>
+                      <input
+                        value={editForm.name}
+                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                        className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-400 mb-1">新しいパスワード（変更しない場合は空欄）</label>
+                      <input
+                        type="password"
+                        autoComplete="new-password"
+                        placeholder="変更する場合のみ入力"
+                        value={editForm.adminPassword}
+                        onChange={(e) => setEditForm({ ...editForm, adminPassword: e.target.value })}
+                        className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      />
+                    </div>
                     <div className="flex gap-2">
                       <button onClick={handleUpdate}
                         className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-sm">
@@ -173,34 +194,32 @@ export default function SuperAdminPage() {
                     </div>
                   </div>
                 ) : (
-                  /* 通常表示 */
                   <>
                     <div className="flex items-start justify-between gap-2 mb-3">
                       <div>
                         <div className="flex items-center gap-2">
                           <p className="font-bold text-white">{t.name}</p>
-                          <span className="text-xs text-gray-400">({t.slug})</span>
                           <span className={`text-xs px-2 py-0.5 rounded-full ${t.isActive ? "bg-emerald-900 text-emerald-400" : "bg-gray-700 text-gray-400"}`}>
                             {t.isActive ? "有効" : "無効"}
                           </span>
                         </div>
-                        <p className="text-xs font-mono text-gray-400 mt-1">
-                          トークン: <span className="text-emerald-400">{t.tenantToken}</span>
+                        <p className="text-xs text-gray-500 mt-1">
+                          作成日: {new Date(t.createdAt).toLocaleDateString("ja-JP")}
                         </p>
                       </div>
                       <button onClick={() => handleEdit(t)}
-                        className="text-xs bg-gray-600 hover:bg-gray-500 text-white px-3 py-1.5 rounded-lg whitespace-nowrap">
+                        className="text-xs bg-gray-600 hover:bg-gray-500 text-white px-3 py-1.5 rounded-lg">
                         編集
                       </button>
                     </div>
                     <div className="flex gap-2 flex-wrap">
                       <button onClick={() => copyParticipantUrl(t.tenantToken)}
                         className="text-xs bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg">
-                        参加者URL
+                        📋 参加者URL
                       </button>
                       <button onClick={() => copyAdminUrl(t.tenantToken)}
                         className="text-xs bg-blue-700 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg">
-                        管理者URL
+                        📋 管理者URL
                       </button>
                     </div>
                   </>

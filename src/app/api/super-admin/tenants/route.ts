@@ -33,12 +33,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   try {
-    const { name, slug, adminPassword } = await req.json();
-    if (!name || !slug || !adminPassword) {
-      return NextResponse.json({ error: "name, slug, adminPassword required" }, { status: 400 });
+    const { name, adminPassword } = await req.json();
+    if (!name || !adminPassword) {
+      return NextResponse.json({ error: "name and adminPassword required" }, { status: 400 });
     }
 
     const tenantToken = generateToken();
+    const slug = tenantToken; // 自動生成
     const [tenant] = await db.insert(tenants)
       .values({ name, slug, tenantToken, adminPasswordHash: hashPassword(adminPassword) })
       .returning();
