@@ -24,6 +24,18 @@ function formatJST(utcStr: string | null): string {
   return new Date(utcStr).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
 }
 
+// 15分単位に丸める（"YYYY-MM-DDTHH:MM" 形式）
+function roundTo15Min(val: string): string {
+  if (!val) return val;
+  const [date, time] = val.split("T");
+  if (!time) return val;
+  const [h, m] = time.split(":").map(Number);
+  const rounded = Math.round(m / 15) * 15;
+  const finalM = rounded >= 60 ? 0 : rounded;
+  const finalH = rounded >= 60 ? (h + 1) % 24 : h;
+  return `${date}T${String(finalH).padStart(2, "0")}:${String(finalM).padStart(2, "0")}`;
+}
+
 type Spot = { id: string; name: string };
 type Course = { id: string; name: string; spots: Spot[] };
 type Event = {
@@ -181,14 +193,14 @@ export default function AdminSettingsPage() {
               <div className="flex-1">
                 <label className="block text-xs text-gray-500 mb-1">開始日時（日本時間）</label>
                 <input type="datetime-local" step="900" value={form.startsAt}
-                  onChange={(e) => setForm({ ...form, startsAt: e.target.value })}
+                  onChange={(e) => setForm({ ...form, startsAt: roundTo15Min(e.target.value) })}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
                 />
               </div>
               <div className="flex-1">
                 <label className="block text-xs text-gray-500 mb-1">終了日時（日本時間）</label>
                 <input type="datetime-local" step="900" value={form.endsAt}
-                  onChange={(e) => setForm({ ...form, endsAt: e.target.value })}
+                  onChange={(e) => setForm({ ...form, endsAt: roundTo15Min(e.target.value) })}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
                 />
               </div>
