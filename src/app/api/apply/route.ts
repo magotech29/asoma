@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
-import { participants, prizeApplications, tenants } from "@/lib/db/schema";
+import { participants, prizeApplications } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { SESSION_COOKIE } from "@/lib/session";
-
-const TENANT_SLUG = process.env.NEXT_PUBLIC_TENANT_SLUG ?? "kasuga";
+import { requireTenant } from "@/lib/tenant";
 
 export async function POST(req: NextRequest) {
   try {
+    const tenant = await requireTenant();
     const { name, contact, message } = await req.json();
     if (!name || !contact) {
       return NextResponse.json({ error: "name and contact required" }, { status: 400 });
@@ -18,13 +18,6 @@ export async function POST(req: NextRequest) {
     const sessionToken = cookieStore.get(SESSION_COOKIE)?.value;
     if (!sessionToken) {
       return NextResponse.json({ error: "No session" }, { status: 401 });
-    }
-
-    const tenant = await db.query.tenants.findFirst({
-      where: eq(tenants.slug, TENANT_SLUG),
-    });
-    if (!tenant) {
-      return NextResponse.json({ error: "Tenant not found" }, { status: 404 });
     }
 
     const participant = await db.query.participants.findFirst({
@@ -40,7 +33,11 @@ export async function POST(req: NextRequest) {
       .returning();
 
     return NextResponse.json({ success: true, id: application.id });
-  } catch (e) {
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "";
+    if (msg === "Tenant not found") {
+      return NextResponse.json({ error: "Invalid access" }, { status: 403 });
+    }
     console.error(e);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

@@ -1,25 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
-import { spots, stampLogs, participants, tenants } from "@/lib/db/schema";
+import { spots, stampLogs, participants } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import { SESSION_COOKIE } from "@/lib/session";
-
-const TENANT_SLUG = process.env.NEXT_PUBLIC_TENANT_SLUG ?? "kasuga";
+import { requireTenant } from "@/lib/tenant";
 
 export async function POST(req: NextRequest) {
   try {
+    const tenant = await requireTenant();
     const { qrToken } = await req.json();
     if (!qrToken) {
       return NextResponse.json({ error: "qrToken required" }, { status: 400 });
-    }
-
-    const tenant = await db.query.tenants.findFirst({
-      where: eq(tenants.slug, TENANT_SLUG),
-    });
-    if (!tenant) {
-      return NextResponse.json({ error: "Tenant not found" }, { status: 404 });
     }
 
     const spot = await db.query.spots.findFirst({
@@ -40,7 +33,6 @@ export async function POST(req: NextRequest) {
       : null;
 
     if (!participant) {
-      sessionToken = existingToken ?? uuidv4();
       const [created] = await db
         .insert(participants)
         .values({ tenantId: tenant.id, sessionToken })
@@ -65,7 +57,6 @@ export async function POST(req: NextRequest) {
     });
 
     const response = NextResponse.json({ success: true, spotName: spot.name, sessionToken });
-
     if (!existingToken) {
       response.cookies.set(SESSION_COOKIE, sessionToken, {
         httpOnly: true,
@@ -73,9 +64,12 @@ export async function POST(req: NextRequest) {
         path: "/",
       });
     }
-
     return response;
-  } catch (e) {
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "";
+    if (msg === "Tenant not found") {
+      return NextResponse.json({ error: "Invalid access" }, { status: 403 });
+    }
     console.error(e);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

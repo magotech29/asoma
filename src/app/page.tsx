@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
 type Spot = { id: string; name: string; description: string | null; sortOrder: number };
 type Course = {
@@ -13,27 +15,79 @@ type Course = {
   spots: Spot[];
 };
 
-export default function Home() {
+function HomeContent() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [tenantName, setTenantName] = useState<string | null>(null);
+  const searchParams = useSearchParams();
 
   useEffect(() => {
-    fetch("/api/courses")
-      .then((r) => {
-        if (!r.ok) throw new Error(`${r.status}`);
-        return r.json();
-      })
-      .then((data) => setCourses(Array.isArray(data) ? data : []))
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
-  }, []);
+    const token = searchParams.get("t");
+
+    const init = async () => {
+      // トークンがあればcookieにセット
+      if (token) {
+        try {
+          const res = await fetch("/api/tenant/init", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setTenantName(data.tenantName);
+          } else {
+            setError("無効なURLです。QRコードを再度読み取ってください。");
+            setLoading(false);
+            return;
+          }
+        } catch {
+          setError("通信エラーが発生しました");
+          setLoading(false);
+          return;
+        }
+      }
+
+      // コース一覧取得
+      fetch("/api/courses")
+        .then((r) => {
+          if (r.status === 403) {
+            setError("アクセスURLが無効です。主催者から受け取ったURLを使用してください。");
+            return null;
+          }
+          if (!r.ok) throw new Error();
+          return r.json();
+        })
+        .then((data) => { if (data) setCourses(Array.isArray(data) ? data : []); })
+        .catch(() => setError("読み込みに失敗しました"))
+        .finally(() => setLoading(false));
+    };
+
+    init();
+  }, [searchParams]);
+
+  if (error) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <header className="bg-emerald-600 text-white px-4 py-4 shadow">
+          <h1 className="text-xl font-bold">🗺️ ぐるっとスタンプラリー</h1>
+        </header>
+        <main className="flex-1 flex items-center justify-center px-4">
+          <div className="text-center">
+            <p className="text-6xl mb-4">🔗</p>
+            <p className="text-gray-600">{error}</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
       <header className="bg-emerald-600 text-white px-4 py-4 shadow">
         <h1 className="text-xl font-bold">🗺️ ぐるっとスタンプラリー</h1>
-        <p className="text-emerald-100 text-sm mt-0.5">春日市まちめぐり</p>
+        {tenantName && <p className="text-emerald-100 text-sm mt-0.5">{tenantName}</p>}
       </header>
 
       <main className="flex-1 px-4 py-6 max-w-lg mx-auto w-full">
@@ -43,7 +97,6 @@ export default function Home() {
         >
           📷 QRコードをスキャン
         </Link>
-
         <Link
           href="/stamps"
           className="block w-full bg-white border border-emerald-200 text-emerald-700 text-center font-semibold py-3 rounded-xl mb-6 shadow-sm hover:bg-emerald-50 transition"
@@ -55,8 +108,6 @@ export default function Home() {
           <h2 className="text-lg font-bold text-gray-800 mb-3">コース一覧</h2>
           {loading ? (
             <p className="text-gray-400 text-center py-8">読み込み中...</p>
-          ) : error ? (
-            <p className="text-red-400 text-center py-8">読み込みに失敗しました</p>
           ) : courses.length === 0 ? (
             <p className="text-gray-400 text-center py-8">現在開催中のコースはありません</p>
           ) : (
@@ -94,8 +145,16 @@ export default function Home() {
       </main>
 
       <footer className="text-center text-xs text-gray-400 py-4">
-        © 春日市地域イベント実行委員会
+        © スタンプラリー実行委員会
       </footer>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><p className="text-gray-400">読み込み中...</p></div>}>
+      <HomeContent />
+    </Suspense>
   );
 }

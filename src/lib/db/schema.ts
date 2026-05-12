@@ -10,13 +10,14 @@ import {
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
-export const userRoleEnum = pgEnum("user_role", ["admin", "spot_admin"]);
+export const userRoleEnum = pgEnum("user_role", ["super_admin", "community_admin"]);
 export const appStatusEnum = pgEnum("prize_status", ["pending", "won", "lost"]);
 
 // ── テナント ──────────────────────────────────────────────
 export const tenants = pgTable("tenants", {
   id: uuid("id").primaryKey().defaultRandom(),
   slug: text("slug").notNull().unique(),
+  tenantToken: text("tenant_token").notNull().unique(), // 参加者URL識別用8文字トークン
   name: text("name").notNull(),
   logoUrl: text("logo_url"),
   primaryColor: text("primary_color").default("#10b981"),
@@ -28,11 +29,10 @@ export const tenants = pgTable("tenants", {
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   tenantId: uuid("tenant_id")
-    .notNull()
     .references(() => tenants.id),
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
-  role: userRoleEnum("role").notNull().default("admin"),
+  role: userRoleEnum("role").notNull().default("community_admin"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
