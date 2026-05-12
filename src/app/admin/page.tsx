@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 export default function AdminDashboard() {
   const [checking, setChecking] = useState(true);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [participantUrl, setParticipantUrl] = useState("/");
   const router = useRouter();
 
   useEffect(() => {
@@ -16,8 +17,14 @@ export default function AdminDashboard() {
         return r;
       }),
       fetch("/api/super-admin/tenants").then((r) => r.status !== 401),
+      fetch("/api/admin/tenant").then((r) => r.ok ? r.json() : null),
     ])
-      .then(([, isSuper]) => setIsSuperAdmin(!!isSuper))
+      .then(([, isSuper, tenant]) => {
+        setIsSuperAdmin(!!isSuper);
+        if (tenant?.tenantToken) {
+          setParticipantUrl(`/?t=${tenant.tenantToken}`);
+        }
+      })
       .catch(() => {})
       .finally(() => setChecking(false));
   }, [router]);
@@ -82,9 +89,9 @@ export default function AdminDashboard() {
         </div>
 
         <div className="mt-6">
-          <Link href="/" className="block text-center text-sm text-gray-400 hover:text-gray-600">
+          <a href={participantUrl} className="block text-center text-sm text-gray-400 hover:text-gray-600">
             参加者画面を見る →
-          </Link>
+          </a>
         </div>
       </main>
     </div>

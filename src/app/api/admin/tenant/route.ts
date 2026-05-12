@@ -4,7 +4,7 @@ import { requireAdminTenant } from "@/lib/auth";
 export async function GET() {
   try {
     const tenant = await requireAdminTenant();
-    return NextResponse.json({ id: tenant.id, name: tenant.name });
+    return NextResponse.json({ id: tenant.id, name: tenant.name, tenantToken: tenant.tenantToken });
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
