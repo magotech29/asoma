@@ -4,6 +4,26 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+// UTC文字列 → JST の datetime-local 入力値（"YYYY-MM-DDTHH:MM"）
+function utcToJSTInput(utcStr: string | null): string {
+  if (!utcStr) return "";
+  const d = new Date(utcStr);
+  const jst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+  return jst.toISOString().slice(0, 16);
+}
+
+// datetime-local の値（JST想定）→ ISO文字列（+09:00付き）
+function jstInputToISO(val: string): string | null {
+  if (!val) return null;
+  return `${val}:00+09:00`;
+}
+
+// UTC文字列 → JST表示文字列
+function formatJST(utcStr: string | null): string {
+  if (!utcStr) return "未定";
+  return new Date(utcStr).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
+}
+
 type Spot = { id: string; name: string };
 type Course = { id: string; name: string; spots: Spot[] };
 type Event = {
@@ -70,8 +90,8 @@ export default function AdminSettingsPage() {
         ...(editing ? { id: editing.id } : {}),
         name: form.name,
         description: form.description || null,
-        startsAt: form.startsAt || null,
-        endsAt: form.endsAt || null,
+        startsAt: jstInputToISO(form.startsAt),
+        endsAt: jstInputToISO(form.endsAt),
       };
       const res = await fetch("/api/admin/events", {
         method: editing ? "PUT" : "POST",
@@ -99,8 +119,8 @@ export default function AdminSettingsPage() {
     setForm({
       name: ev.name,
       description: ev.description ?? "",
-      startsAt: ev.startsAt ? ev.startsAt.slice(0, 16) : "",
-      endsAt: ev.endsAt ? ev.endsAt.slice(0, 16) : "",
+      startsAt: utcToJSTInput(ev.startsAt),
+      endsAt: utcToJSTInput(ev.endsAt),
     });
   };
 
@@ -159,15 +179,15 @@ export default function AdminSettingsPage() {
             />
             <div className="flex gap-2">
               <div className="flex-1">
-                <label className="block text-xs text-gray-500 mb-1">開始日時</label>
-                <input type="datetime-local" value={form.startsAt}
+                <label className="block text-xs text-gray-500 mb-1">開始日時（日本時間）</label>
+                <input type="datetime-local" step="900" value={form.startsAt}
                   onChange={(e) => setForm({ ...form, startsAt: e.target.value })}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
                 />
               </div>
               <div className="flex-1">
-                <label className="block text-xs text-gray-500 mb-1">終了日時</label>
-                <input type="datetime-local" value={form.endsAt}
+                <label className="block text-xs text-gray-500 mb-1">終了日時（日本時間）</label>
+                <input type="datetime-local" step="900" value={form.endsAt}
                   onChange={(e) => setForm({ ...form, endsAt: e.target.value })}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
                 />
@@ -238,8 +258,7 @@ export default function AdminSettingsPage() {
                     </div>
                     {ev.startsAt && (
                       <p className="text-xs text-gray-400 mt-1">
-                        {new Date(ev.startsAt).toLocaleString("ja-JP")} 〜{" "}
-                        {ev.endsAt ? new Date(ev.endsAt).toLocaleString("ja-JP") : "未定"}
+                        {formatJST(ev.startsAt)} 〜 {formatJST(ev.endsAt)}
                       </p>
                     )}
                   </div>
