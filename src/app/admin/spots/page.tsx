@@ -17,18 +17,15 @@ type Spot = {
   sortOrder: number;
 };
 
-function decodePlusCode(input: string): { lat: number; lng: number } | null {
-  try {
-    // "MQJ8+GR 千代田区、東京都" → コード部分だけ取り出す
-    const code = input.trim().split(" ")[0];
-    // open-location-code はグローバルに読み込む必要があるためダイナミックに処理
-    const OpenLocationCode = (window as unknown as { OpenLocationCode?: { decode: (code: string) => { latitudeCenter: number; longitudeCenter: number } } }).OpenLocationCode;
-    if (!OpenLocationCode) return null;
-    const decoded = OpenLocationCode.decode(code);
-    return { lat: decoded.latitudeCenter, lng: decoded.longitudeCenter };
-  } catch {
-    return null;
-  }
+function parseCoords(input: string): { lat: number; lng: number } | null {
+  // "35.6813, 139.7660" または "35.6813 139.7660" 形式を受け付ける
+  const parts = input.trim().split(/[,\s]+/).filter(Boolean);
+  if (parts.length < 2) return null;
+  const lat = parseFloat(parts[0]);
+  const lng = parseFloat(parts[1]);
+  if (isNaN(lat) || isNaN(lng)) return null;
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+  return { lat, lng };
 }
 
 export default function AdminSpotsPage() {
@@ -41,15 +38,6 @@ export default function AdminSpotsPage() {
   const [plusCode, setPlusCode] = useState("");
   const [plusCodeError, setPlusCodeError] = useState<string | null>(null);
   const router = useRouter();
-
-  useEffect(() => {
-    // open-location-code をスクリプトタグで読み込む
-    const script = document.createElement("script");
-    script.src = "https://cdn.jsdelivr.net/gh/google/open-location-code/javascript/openlocationcode.js";
-    script.async = true;
-    document.head.appendChild(script);
-    return () => { document.head.removeChild(script); };
-  }, []);
 
   const load = () => {
     Promise.all([
@@ -68,9 +56,9 @@ export default function AdminSpotsPage() {
 
   const handlePlusCode = () => {
     setPlusCodeError(null);
-    const result = decodePlusCode(plusCode);
+    const result = parseCoords(plusCode);
     if (!result) {
-      setPlusCodeError("プラスコードを認識できませんでした。形式を確認してください。");
+      setPlusCodeError("座標を認識できませんでした。「35.6813, 139.7660」の形式で入力してください。");
       return;
     }
     setForm((f) => ({
@@ -173,27 +161,28 @@ export default function AdminSpotsPage() {
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
             />
 
-            {/* プラスコード入力 */}
+            {/* 座標入力（Google マップからコピペ） */}
             <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-3">
               <p className="text-xs font-semibold text-emerald-700 mb-1.5">
-                📍 Googleプラスコードから位置を入力
+                📍 Google マップから座標を入力
               </p>
-              <p className="text-xs text-gray-500 mb-2">
-                Google マップで場所を右クリック → 表示されるコードをコピー
-              </p>
+              <div className="text-xs text-gray-500 mb-2 space-y-1">
+                <p><span className="font-semibold">PC:</span> Google マップでスポットを右クリック → 表示される数字（例: 35.6813, 139.7660）をクリックでコピー</p>
+                <p><span className="font-semibold">スマホ:</span> Google マップでスポットを長押し → 上部に表示される数字をタップしてコピー</p>
+              </div>
               <div className="flex gap-2">
                 <input
-                  placeholder="例）MQJ8+GR 千代田区、東京都"
+                  placeholder="例）35.6813, 139.7660"
                   value={plusCode}
                   onChange={(e) => { setPlusCode(e.target.value); setPlusCodeError(null); }}
-                  className="flex-1 border border-emerald-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white"
+                  className="flex-1 border border-emerald-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white font-mono"
                 />
                 <button
                   type="button"
                   onClick={handlePlusCode}
                   className="bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-semibold whitespace-nowrap"
                 >
-                  変換
+                  入力
                 </button>
               </div>
               {plusCodeError && <p className="text-red-500 text-xs mt-1">{plusCodeError}</p>}
