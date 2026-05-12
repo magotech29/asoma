@@ -24,16 +24,55 @@ function formatJST(utcStr: string | null): string {
   return new Date(utcStr).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
 }
 
-// 15分単位に丸める（"YYYY-MM-DDTHH:MM" 形式）
-function roundTo15Min(val: string): string {
-  if (!val) return val;
-  const [date, time] = val.split("T");
-  if (!time) return val;
-  const [h, m] = time.split(":").map(Number);
-  const rounded = Math.round(m / 15) * 15;
-  const finalM = rounded >= 60 ? 0 : rounded;
-  const finalH = rounded >= 60 ? (h + 1) % 24 : h;
-  return `${date}T${String(finalH).padStart(2, "0")}:${String(finalM).padStart(2, "0")}`;
+const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
+const MINUTES = ["00", "15", "30", "45"];
+
+function DateTimePicker({ value, onChange, label }: {
+  value: string;
+  onChange: (v: string) => void;
+  label: string;
+}) {
+  const [datePart, timePart] = value ? value.split("T") : ["", ""];
+  const [h, m] = timePart ? timePart.split(":") : ["", ""];
+
+  const update = (d: string, hour: string, min: string) => {
+    if (d && hour !== "" && min !== "") {
+      onChange(`${d}T${hour}:${min}`);
+    } else {
+      onChange("");
+    }
+  };
+
+  return (
+    <div className="flex-1">
+      <label className="block text-xs text-gray-500 mb-1">{label}（日本時間）</label>
+      <div className="flex gap-1 items-center">
+        <input
+          type="date"
+          value={datePart ?? ""}
+          onChange={(e) => update(e.target.value, h ?? "", m ?? "")}
+          className="flex-1 border border-gray-200 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 min-w-0"
+        />
+        <select
+          value={h ?? ""}
+          onChange={(e) => update(datePart ?? "", e.target.value, m ?? "00")}
+          className="border border-gray-200 rounded-lg px-1 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+        >
+          <option value="">--</option>
+          {HOURS.map((hh) => <option key={hh} value={hh}>{hh}</option>)}
+        </select>
+        <span className="text-gray-400 text-sm">:</span>
+        <select
+          value={m ?? ""}
+          onChange={(e) => update(datePart ?? "", h ?? "00", e.target.value)}
+          className="border border-gray-200 rounded-lg px-1 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+        >
+          <option value="">--</option>
+          {MINUTES.map((mm) => <option key={mm} value={mm}>{mm}</option>)}
+        </select>
+      </div>
+    </div>
+  );
 }
 
 type Spot = { id: string; name: string };
@@ -189,21 +228,17 @@ export default function AdminSettingsPage() {
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
             />
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <label className="block text-xs text-gray-500 mb-1">開始日時（日本時間）</label>
-                <input type="datetime-local" step="900" value={form.startsAt}
-                  onChange={(e) => setForm({ ...form, startsAt: roundTo15Min(e.target.value) })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
-                />
-              </div>
-              <div className="flex-1">
-                <label className="block text-xs text-gray-500 mb-1">終了日時（日本時間）</label>
-                <input type="datetime-local" step="900" value={form.endsAt}
-                  onChange={(e) => setForm({ ...form, endsAt: roundTo15Min(e.target.value) })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
-                />
-              </div>
+            <div className="flex gap-3">
+              <DateTimePicker
+                label="開始日時"
+                value={form.startsAt}
+                onChange={(v) => setForm({ ...form, startsAt: v })}
+              />
+              <DateTimePicker
+                label="終了日時"
+                value={form.endsAt}
+                onChange={(v) => setForm({ ...form, endsAt: v })}
+              />
             </div>
             <div className="flex gap-2">
               <button type="submit" disabled={submitting}
