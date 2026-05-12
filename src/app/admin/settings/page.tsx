@@ -22,35 +22,41 @@ export default function AdminSettingsPage() {
   const [form, setForm] = useState({ name: "", description: "", startsAt: "", endsAt: "" });
   const [editing, setEditing] = useState<Event | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [submitResult, setSubmitResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const [copySource, setCopySource] = useState("");
   const [copyTarget, setCopyTarget] = useState("");
   const [copying, setCopying] = useState(false);
   const [copyResult, setCopyResult] = useState<string | null>(null);
   const router = useRouter();
 
-  const load = () => {
-    Promise.all([
-      fetch("/api/admin/events").then((r) => {
-        if (r.status === 401) { router.replace("/admin/login"); return null; }
-        return r.json();
-      }),
-      fetch("/api/admin/courses").then((r) => r.ok ? r.json() : []),
-      fetch("/api/admin/spots").then((r) => r.ok ? r.json() : []),
-    ]).then(([evts, crs, sps]) => {
-      if (!evts) return;
-      // コースとスポットをイベントに紐づけ
-      const enriched: EventWithCourses[] = evts.map((e: Event) => ({
+  const load = async () => {
+    try {
+      const [evtsRes, crsRes, spsRes] = await Promise.all([
+        fetch("/api/admin/events"),
+        fetch("/api/admin/courses"),
+        fetch("/api/admin/spots"),
+      ]);
+      if (evtsRes.status === 401) { router.replace("/admin/login"); return; }
+      if (!evtsRes.ok) throw new Error("events fetch failed");
+      const evts: Event[] = await evtsRes.json();
+      const crs: (Course & { eventId: string })[] = crsRes.ok ? await crsRes.json() : [];
+      const sps: (Spot & { courseId: string })[] = spsRes.ok ? await spsRes.json() : [];
+
+      const enriched: EventWithCourses[] = evts.map((e) => ({
         ...e,
-        courses: (crs as (Course & { eventId: string })[])
+        courses: crs
           .filter((c) => c.eventId === e.id)
           .map((c) => ({
             ...c,
-            spots: (sps as (Spot & { courseId: string })[]).filter((s) => s.courseId === c.id),
+            spots: sps.filter((s) => s.courseId === c.id),
           })),
       }));
       setEvents(enriched);
+    } catch {
+      // エラーは無視してリストをクリアしない
+    } finally {
       setLoading(false);
-    });
+    }
   };
 
   useEffect(() => { load(); }, []);
@@ -58,22 +64,34 @@ export default function AdminSettingsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    const body = {
-      ...(editing ? { id: editing.id } : {}),
-      name: form.name,
-      description: form.description || null,
-      startsAt: form.startsAt || null,
-      endsAt: form.endsAt || null,
-    };
-    await fetch("/api/admin/events", {
-      method: editing ? "PUT" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    setForm({ name: "", description: "", startsAt: "", endsAt: "" });
-    setEditing(null);
-    setSubmitting(false);
-    load();
+    setSubmitResult(null);
+    try {
+      const body = {
+        ...(editing ? { id: editing.id } : {}),
+        name: form.name,
+        description: form.description || null,
+        startsAt: form.startsAt || null,
+        endsAt: form.endsAt || null,
+      };
+      const res = await fetch("/api/admin/events", {
+        method: editing ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        setSubmitResult({ ok: true, msg: editing ? "イベントを更新しました" : "イベントを追加しました" });
+        setForm({ name: "", description: "", startsAt: "", endsAt: "" });
+        setEditing(null);
+        await load();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setSubmitResult({ ok: false, msg: data.error ?? "保存に失敗しました" });
+      }
+    } catch {
+      setSubmitResult({ ok: false, msg: "通信エラーが発生しました" });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleEdit = (ev: Event) => {
@@ -157,17 +175,22 @@ export default function AdminSettingsPage() {
             </div>
             <div className="flex gap-2">
               <button type="submit" disabled={submitting}
-                className="flex-1 bg-emerald-500 text-white py-2 rounded-lg font-semibold text-sm">
-                {editing ? "更新" : "追加"}
+                className="flex-1 bg-emerald-500 text-white py-2 rounded-lg font-semibold text-sm disabled:opacity-50">
+                {submitting ? "保存中..." : editing ? "更新" : "追加"}
               </button>
               {editing && (
                 <button type="button"
-                  onClick={() => { setEditing(null); setForm({ name: "", description: "", startsAt: "", endsAt: "" }); }}
+                  onClick={() => { setEditing(null); setForm({ name: "", description: "", startsAt: "", endsAt: "" }); setSubmitResult(null); }}
                   className="px-4 bg-gray-100 text-gray-600 py-2 rounded-lg text-sm">
                   キャンセル
                 </button>
               )}
             </div>
+            {submitResult && (
+              <div className={`rounded-lg px-3 py-2 text-sm font-semibold text-center ${submitResult.ok ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"}`}>
+                {submitResult.ok ? "✓ " : "✗ "}{submitResult.msg}
+              </div>
+            )}
           </form>
         </div>
 
