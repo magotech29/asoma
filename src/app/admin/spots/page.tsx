@@ -60,12 +60,19 @@ export default function AdminSpotsPage() {
 
   const handlePlusCode = () => {
     setPlusCodeError(null);
-    const result = parseCoords(plusCode);
-    if (!result) {
+    const parts = plusCode.trim().split(/[,\s]+/).filter(Boolean);
+    if (parts.length < 2) {
       setPlusCodeError("座標を認識できませんでした。「35.6813, 139.7660」の形式で入力してください。");
       return;
     }
-    setForm((f) => ({ ...f, lat: result.lat.toFixed(6), lng: result.lng.toFixed(6) }));
+    const lat = parseFloat(parts[0]);
+    const lng = parseFloat(parts[1]);
+    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      setPlusCodeError("座標を認識できませんでした。「35.6813, 139.7660」の形式で入力してください。");
+      return;
+    }
+    // 元の文字列をそのまま使い、桁数を落とさない
+    setForm((f) => ({ ...f, lat: parts[0].trim(), lng: parts[1].trim() }));
     setPlusCode("");
   };
 
