@@ -173,32 +173,37 @@ export default function SuperAdminPage() {
         ) : (
           <ul className="space-y-4">
             {tenants.map((t) => (
-              <li key={t.id} className="bg-gray-800 rounded-xl border border-gray-700 p-4">
+              <li key={t.id} className={`rounded-xl border p-4 transition-all ${editingId === t.id ? "bg-amber-950 border-amber-500 ring-2 ring-amber-400" : "bg-gray-800 border-gray-700"}`}>
                 {editingId === t.id ? (
                   <div className="space-y-3">
+                    <div className="flex items-center gap-2 bg-amber-900/50 border border-amber-600 rounded-lg px-3 py-2 mb-1">
+                      <span className="text-amber-400 font-bold text-sm">✏️ 編集中：</span>
+                      <span className="text-amber-200 text-sm font-semibold">{t.name}</span>
+                    </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-400 mb-1">コミュニティ名</label>
                       <input
                         value={editForm.name}
                         onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                        className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                       />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-400 mb-1">新しいパスワード（変更しない場合は空欄）</label>
+                      <p className="text-xs text-gray-500 mb-1">※ パスワードはハッシュ化保存のため現在値は確認できません</p>
                       <input
                         type="password"
                         autoComplete="new-password"
                         placeholder="変更する場合のみ入力"
                         value={editForm.adminPassword}
                         onChange={(e) => setEditForm({ ...editForm, adminPassword: e.target.value })}
-                        className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
                       />
                     </div>
                     <div className="flex gap-2">
                       <button onClick={handleUpdate}
-                        className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-sm">
-                        保存
+                        className="flex-1 bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg text-sm">
+                        ✏️ 保存する
                       </button>
                       <button onClick={() => setEditingId(null)}
                         className="px-4 bg-gray-600 hover:bg-gray-500 text-white py-2 rounded-lg text-sm">
