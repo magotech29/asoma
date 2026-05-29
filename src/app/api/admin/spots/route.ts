@@ -28,8 +28,8 @@ export async function POST(req: NextRequest) {
     const [created] = await db.insert(spots)
       .values({
         ...body,
-        lat: body.lat != null ? parseFloat(String(body.lat)) : null,
-        lng: body.lng != null ? parseFloat(String(body.lng)) : null,
+        lat: body.lat ? String(body.lat) : null,
+        lng: body.lng ? String(body.lng) : null,
         tenantId: tenant.id,
         qrToken: uuidv4(),
       })
@@ -49,8 +49,8 @@ export async function PUT(req: NextRequest) {
     const { id, ...body } = await req.json();
     const [updated] = await db.update(spots).set({
       ...body,
-      lat: body.lat != null ? parseFloat(String(body.lat)) : null,
-      lng: body.lng != null ? parseFloat(String(body.lng)) : null,
+      lat: body.lat ? String(body.lat) : null,
+      lng: body.lng ? String(body.lng) : null,
     }).where(eq(spots.id, id)).returning();
     return NextResponse.json(updated);
   } catch (e: unknown) {

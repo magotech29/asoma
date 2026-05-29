@@ -11,8 +11,8 @@ type Spot = {
   name: string;
   description: string | null;
   address: string | null;
-  lat: number | null;
-  lng: number | null;
+  lat: string | null;
+  lng: string | null;
   instagramUrl: string | null;
   websiteUrl: string | null;
   qrToken: string;
@@ -109,8 +109,8 @@ export default function AdminSpotsPage() {
       name: s.name,
       description: s.description ?? "",
       address: s.address ?? "",
-      lat: s.lat?.toString() ?? "",
-      lng: s.lng?.toString() ?? "",
+      lat: s.lat ?? "",
+      lng: s.lng ?? "",
       instagramUrl: s.instagramUrl ?? "",
       websiteUrl: s.websiteUrl ?? "",
     });

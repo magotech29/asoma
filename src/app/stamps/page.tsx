@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-type Spot = { id: string; name: string; description: string | null; lat: number | null; lng: number | null; instagramUrl: string | null; websiteUrl: string | null; sortOrder: number };
+type Spot = { id: string; name: string; description: string | null; lat: string | null; lng: string | null; instagramUrl: string | null; websiteUrl: string | null; sortOrder: number };
 type Course = { id: string; name: string; spots: Spot[] };
 type StampData = { courses: Course[]; stampedSpotIds: string[] };
 
