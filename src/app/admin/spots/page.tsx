@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -19,8 +19,9 @@ type Spot = {
   sortOrder: number;
 };
 
+const EMPTY_FORM = { courseId: "", name: "", description: "", address: "", lat: "", lng: "", instagramUrl: "", websiteUrl: "" };
+
 function parseCoords(input: string): { lat: number; lng: number } | null {
-  // "35.6813, 139.7660" または "35.6813 139.7660" 形式を受け付ける
   const parts = input.trim().split(/[,\s]+/).filter(Boolean);
   if (parts.length < 2) return null;
   const lat = parseFloat(parts[0]);
@@ -34,11 +35,12 @@ export default function AdminSpotsPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [spots, setSpots] = useState<Spot[]>([]);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({ courseId: "", name: "", description: "", address: "", lat: "", lng: "", instagramUrl: "", websiteUrl: "" });
+  const [form, setForm] = useState(EMPTY_FORM);
   const [editing, setEditing] = useState<Spot | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [plusCode, setPlusCode] = useState("");
   const [plusCodeError, setPlusCodeError] = useState<string | null>(null);
+  const formRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   const load = () => {
@@ -63,11 +65,7 @@ export default function AdminSpotsPage() {
       setPlusCodeError("座標を認識できませんでした。「35.6813, 139.7660」の形式で入力してください。");
       return;
     }
-    setForm((f) => ({
-      ...f,
-      lat: result.lat.toFixed(6),
-      lng: result.lng.toFixed(6),
-    }));
+    setForm((f) => ({ ...f, lat: result.lat.toFixed(6), lng: result.lng.toFixed(6) }));
     setPlusCode("");
   };
 
@@ -90,7 +88,7 @@ export default function AdminSpotsPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    setForm({ courseId: courses[0]?.id ?? "", name: "", description: "", address: "", lat: "", lng: "", instagramUrl: "", websiteUrl: "" });
+    setForm({ ...EMPTY_FORM, courseId: courses[0]?.id ?? "" });
     setEditing(null);
     setSubmitting(false);
     setPlusCode("");
@@ -109,6 +107,14 @@ export default function AdminSpotsPage() {
       instagramUrl: s.instagramUrl ?? "",
       websiteUrl: s.websiteUrl ?? "",
     });
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  };
+
+  const handleCancel = () => {
+    setEditing(null);
+    setForm({ ...EMPTY_FORM, courseId: courses[0]?.id ?? "" });
+    setPlusCode("");
+    setPlusCodeError(null);
   };
 
   const handleDelete = async (id: string) => {
@@ -121,7 +127,11 @@ export default function AdminSpotsPage() {
     load();
   };
 
-  const courseMap = Object.fromEntries(courses.map((c) => [c.id, c.name]));
+  // コース別にスポットをグルーピング
+  const spotsByCourse = courses.map((c) => ({
+    course: c,
+    spots: spots.filter((s) => s.courseId === c.id),
+  }));
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -131,7 +141,22 @@ export default function AdminSpotsPage() {
       </header>
 
       <main className="flex-1 px-4 py-6 max-w-lg mx-auto w-full">
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-6">
+
+        {/* フォーム */}
+        <div
+          ref={formRef}
+          className={`rounded-xl border shadow-sm p-4 mb-6 transition-all ${
+            editing
+              ? "bg-amber-50 border-amber-400 ring-2 ring-amber-300"
+              : "bg-white border-gray-100"
+          }`}
+        >
+          {editing && (
+            <div className="flex items-center gap-2 mb-3 bg-amber-100 border border-amber-300 rounded-lg px-3 py-2">
+              <span className="text-amber-600 font-bold text-sm">✏️ 編集モード：</span>
+              <span className="text-amber-800 text-sm font-semibold truncate">{editing.name}</span>
+            </div>
+          )}
           <h2 className="font-bold text-gray-700 mb-3">
             {editing ? "スポットを編集" : "スポットを追加"}
           </h2>
@@ -167,14 +192,12 @@ export default function AdminSpotsPage() {
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
             />
 
-            {/* 座標入力（Google マップからコピペ） */}
+            {/* 座標入力 */}
             <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-3">
-              <p className="text-xs font-semibold text-emerald-700 mb-1.5">
-                📍 Google マップから座標を入力
-              </p>
+              <p className="text-xs font-semibold text-emerald-700 mb-1.5">📍 Google マップから座標を入力</p>
               <div className="text-xs text-gray-500 mb-2 space-y-1">
-                <p><span className="font-semibold">PC:</span> Google マップでスポットを右クリック → 表示される数字（例: 35.6813, 139.7660）をクリックでコピー</p>
-                <p><span className="font-semibold">スマホ:</span> Google マップでスポットを長押し → 上部に表示される数字をタップしてコピー</p>
+                <p><span className="font-semibold">PC:</span> 右クリック → 数字（例: 35.6813, 139.7660）をクリックでコピー</p>
+                <p><span className="font-semibold">スマホ:</span> 長押し → 上部の数字をタップしてコピー</p>
               </div>
               <div className="flex gap-2">
                 <input
@@ -194,14 +217,12 @@ export default function AdminSpotsPage() {
               {plusCodeError && <p className="text-red-500 text-xs mt-1">{plusCodeError}</p>}
             </div>
 
-            {/* 緯度経度（手動入力or自動入力） */}
+            {/* 緯度経度 */}
             <div className="flex gap-2">
               <div className="flex-1">
                 <label className="block text-xs text-gray-500 mb-1">緯度 (lat)</label>
                 <input
-                  type="number"
-                  step="any"
-                  placeholder="35.681236"
+                  type="number" step="any" placeholder="35.681236"
                   value={form.lat}
                   onChange={(e) => setForm({ ...form, lat: e.target.value })}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
@@ -210,9 +231,7 @@ export default function AdminSpotsPage() {
               <div className="flex-1">
                 <label className="block text-xs text-gray-500 mb-1">経度 (lng)</label>
                 <input
-                  type="number"
-                  step="any"
-                  placeholder="139.767125"
+                  type="number" step="any" placeholder="139.767125"
                   value={form.lng}
                   onChange={(e) => setForm({ ...form, lng: e.target.value })}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
@@ -227,7 +246,7 @@ export default function AdminSpotsPage() {
                 <span className="text-base">📷</span>
                 <input
                   type="url"
-                  placeholder="InstagramページURL（例: https://www.instagram.com/xxx）"
+                  placeholder="InstagramページURL"
                   value={form.instagramUrl}
                   onChange={(e) => setForm({ ...form, instagramUrl: e.target.value })}
                   className="flex-1 border border-purple-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 bg-white"
@@ -237,7 +256,7 @@ export default function AdminSpotsPage() {
                 <span className="text-base">🌐</span>
                 <input
                   type="url"
-                  placeholder="WebサイトURL（HP・FacebookページなどのURL）"
+                  placeholder="WebサイトURL（HP・Facebookなど）"
                   value={form.websiteUrl}
                   onChange={(e) => setForm({ ...form, websiteUrl: e.target.value })}
                   className="flex-1 border border-purple-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 bg-white"
@@ -249,18 +268,15 @@ export default function AdminSpotsPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="flex-1 bg-emerald-500 text-white py-2 rounded-lg font-semibold text-sm"
+                className={`flex-1 text-white py-2 rounded-lg font-semibold text-sm ${editing ? "bg-amber-500 hover:bg-amber-600" : "bg-emerald-500 hover:bg-emerald-600"}`}
               >
-                {editing ? "更新" : "追加"}
+                {editing ? "✏️ 更新する" : "追加"}
               </button>
               {editing && (
                 <button
                   type="button"
-                  onClick={() => {
-                    setEditing(null);
-                    setForm({ courseId: courses[0]?.id ?? "", name: "", description: "", address: "", lat: "", lng: "", instagramUrl: "", websiteUrl: "" });
-                  }}
-                  className="px-4 bg-gray-100 text-gray-600 py-2 rounded-lg text-sm"
+                  onClick={handleCancel}
+                  className="px-4 bg-gray-100 text-gray-600 py-2 rounded-lg text-sm hover:bg-gray-200"
                 >
                   キャンセル
                 </button>
@@ -269,41 +285,58 @@ export default function AdminSpotsPage() {
           </form>
         </div>
 
+        {/* スポット一覧（コース別グループ） */}
         {loading ? (
           <p className="text-gray-400 text-center py-8">読み込み中...</p>
         ) : spots.length === 0 ? (
           <p className="text-gray-400 text-center py-8">スポットがありません</p>
         ) : (
-          <ul className="space-y-3">
-            {spots.map((s) => (
-              <li key={s.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <p className="text-xs text-emerald-600 font-semibold">{courseMap[s.courseId] ?? "不明"}</p>
-                    <p className="font-bold text-gray-800">{s.name}</p>
-                    {s.address && <p className="text-xs text-gray-400 mt-0.5">{s.address}</p>}
-                    {s.lat && s.lng && (
-                      <p className="text-xs text-gray-300 mt-0.5">{s.lat.toFixed(4)}, {s.lng.toFixed(4)}</p>
-                    )}
-                    {(s.instagramUrl || s.websiteUrl) && (
-                      <div className="flex gap-2 mt-1">
-                        {s.instagramUrl && (
-                          <a href={s.instagramUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-purple-500 hover:underline">📷 Instagram</a>
-                        )}
-                        {s.websiteUrl && (
-                          <a href={s.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline">🌐 Webサイト</a>
-                        )}
-                      </div>
-                    )}
+          <div className="space-y-6">
+            {spotsByCourse.map(({ course, spots: courseSpots }) => (
+              courseSpots.length === 0 ? null : (
+                <section key={course.id}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full">
+                      🗺️ {course.name}
+                    </span>
+                    <span className="text-xs text-gray-400">{courseSpots.length}件</span>
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => handleEdit(s)} className="text-sm text-blue-500 hover:underline">編集</button>
-                    <button onClick={() => handleDelete(s.id)} className="text-sm text-red-400 hover:underline">削除</button>
-                  </div>
-                </div>
-              </li>
+                  <ul className="space-y-2">
+                    {courseSpots.map((s) => (
+                      <li
+                        key={s.id}
+                        className={`bg-white rounded-xl border shadow-sm px-4 py-3 transition ${
+                          editing?.id === s.id ? "border-amber-400 ring-1 ring-amber-300" : "border-gray-100"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-gray-800 truncate">{s.name}</p>
+                            {s.address && <p className="text-xs text-gray-400 truncate mt-0.5">{s.address}</p>}
+                            <div className="flex items-center gap-3 mt-1">
+                              {s.lat && s.lng && (
+                                <span className="text-xs text-gray-300">📍 {s.lat.toFixed(4)}, {s.lng.toFixed(4)}</span>
+                              )}
+                              {s.instagramUrl && (
+                                <a href={s.instagramUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-purple-500 hover:underline">📷 IG</a>
+                              )}
+                              {s.websiteUrl && (
+                                <a href={s.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline">🌐 Web</a>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex gap-3 ml-3 shrink-0">
+                            <button onClick={() => handleEdit(s)} className="text-sm text-blue-500 hover:underline">編集</button>
+                            <button onClick={() => handleDelete(s.id)} className="text-sm text-red-400 hover:underline">削除</button>
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )
             ))}
-          </ul>
+          </div>
         )}
       </main>
     </div>
