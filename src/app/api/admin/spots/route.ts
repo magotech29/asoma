@@ -21,20 +21,18 @@ export async function GET() {
   }
 }
 
-function parseCoords(body: Record<string, unknown>) {
-  return {
-    ...body,
-    lat: body.lat != null ? parseFloat(String(body.lat)) : null,
-    lng: body.lng != null ? parseFloat(String(body.lng)) : null,
-  };
-}
-
 export async function POST(req: NextRequest) {
   try {
     const tenant = await requireAdminTenant();
     const body = await req.json();
     const [created] = await db.insert(spots)
-      .values({ ...parseCoords(body), tenantId: tenant.id, qrToken: uuidv4() })
+      .values({
+        ...body,
+        lat: body.lat != null ? parseFloat(String(body.lat)) : null,
+        lng: body.lng != null ? parseFloat(String(body.lng)) : null,
+        tenantId: tenant.id,
+        qrToken: uuidv4(),
+      })
       .returning();
     return NextResponse.json(created, { status: 201 });
   } catch (e: unknown) {
@@ -49,7 +47,11 @@ export async function PUT(req: NextRequest) {
   try {
     await requireAdminTenant();
     const { id, ...body } = await req.json();
-    const [updated] = await db.update(spots).set(parseCoords(body)).where(eq(spots.id, id)).returning();
+    const [updated] = await db.update(spots).set({
+      ...body,
+      lat: body.lat != null ? parseFloat(String(body.lat)) : null,
+      lng: body.lng != null ? parseFloat(String(body.lng)) : null,
+    }).where(eq(spots.id, id)).returning();
     return NextResponse.json(updated);
   } catch (e: unknown) {
     if (e instanceof Error && e.message === "Unauthorized")
