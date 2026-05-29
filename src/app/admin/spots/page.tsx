@@ -85,8 +85,8 @@ export default function AdminSpotsPage() {
       name: form.name,
       description: form.description || null,
       address: form.address || null,
-      lat: form.lat ? parseFloat(form.lat) : null,
-      lng: form.lng ? parseFloat(form.lng) : null,
+      lat: form.lat ? form.lat : null,
+      lng: form.lng ? form.lng : null,
       instagramUrl: form.instagramUrl || null,
       websiteUrl: form.websiteUrl || null,
     };
@@ -322,7 +322,7 @@ export default function AdminSpotsPage() {
                             {s.address && <p className="text-xs text-gray-400 truncate mt-0.5">{s.address}</p>}
                             <div className="flex items-center gap-3 mt-1">
                               {s.lat && s.lng && (
-                                <span className="text-xs text-gray-300">📍 {s.lat.toFixed(4)}, {s.lng.toFixed(4)}</span>
+                                <span className="text-xs text-gray-300">📍 {s.lat}, {s.lng}</span>
                               )}
                               {s.instagramUrl && (
                                 <a href={s.instagramUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-purple-500 hover:underline">📷 IG</a>
