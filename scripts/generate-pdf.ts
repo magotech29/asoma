@@ -89,6 +89,11 @@ const CSS = `
 
 const files = [
   {
+    input: "docs/super-admin-manual.md",
+    output: "docs/super-admin-manual.html",
+    label: "スーパー管理者マニュアル",
+  },
+  {
     input: "docs/admin-manual.md",
     output: "docs/admin-manual.html",
     label: "コミュニティ管理者マニュアル",

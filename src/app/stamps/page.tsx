@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-type Spot = { id: string; name: string; description: string | null; sortOrder: number };
+type Spot = { id: string; name: string; description: string | null; instagramUrl: string | null; websiteUrl: string | null; sortOrder: number };
 type Course = { id: string; name: string; spots: Spot[] };
 type StampData = { courses: Course[]; stampedSpotIds: string[] };
 
@@ -115,6 +115,16 @@ export default function StampsPage() {
                       <div className={`text-3xl mb-1 ${stamped ? "" : "grayscale opacity-30"}`}>🏅</div>
                       <p className="text-xs text-gray-600 leading-tight">{spot.name}</p>
                       {stamped && <p className="text-xs text-emerald-500 font-bold mt-1">取得済み</p>}
+                      {stamped && (spot.instagramUrl || spot.websiteUrl) && (
+                        <div className="flex justify-center gap-2 mt-1.5">
+                          {spot.instagramUrl && (
+                            <a href={spot.instagramUrl} target="_blank" rel="noopener noreferrer" className="text-base leading-none" title="Instagram">📷</a>
+                          )}
+                          {spot.websiteUrl && (
+                            <a href={spot.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-base leading-none" title="Webサイト">🌐</a>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}

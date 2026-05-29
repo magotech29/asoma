@@ -80,6 +80,8 @@ export const spots = pgTable("spots", {
   address: text("address"),
   lat: doublePrecision("lat"),
   lng: doublePrecision("lng"),
+  instagramUrl: text("instagram_url"),
+  websiteUrl: text("website_url"),
   qrToken: text("qr_token").notNull().unique(),
   sortOrder: integer("sort_order").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),

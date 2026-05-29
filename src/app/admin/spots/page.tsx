@@ -13,6 +13,8 @@ type Spot = {
   address: string | null;
   lat: number | null;
   lng: number | null;
+  instagramUrl: string | null;
+  websiteUrl: string | null;
   qrToken: string;
   sortOrder: number;
 };
@@ -32,7 +34,7 @@ export default function AdminSpotsPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [spots, setSpots] = useState<Spot[]>([]);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({ courseId: "", name: "", description: "", address: "", lat: "", lng: "" });
+  const [form, setForm] = useState({ courseId: "", name: "", description: "", address: "", lat: "", lng: "", instagramUrl: "", websiteUrl: "" });
   const [editing, setEditing] = useState<Spot | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [plusCode, setPlusCode] = useState("");
@@ -80,13 +82,15 @@ export default function AdminSpotsPage() {
       address: form.address || null,
       lat: form.lat ? parseFloat(form.lat) : null,
       lng: form.lng ? parseFloat(form.lng) : null,
+      instagramUrl: form.instagramUrl || null,
+      websiteUrl: form.websiteUrl || null,
     };
     await fetch("/api/admin/spots", {
       method: editing ? "PUT" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    setForm({ courseId: courses[0]?.id ?? "", name: "", description: "", address: "", lat: "", lng: "" });
+    setForm({ courseId: courses[0]?.id ?? "", name: "", description: "", address: "", lat: "", lng: "", instagramUrl: "", websiteUrl: "" });
     setEditing(null);
     setSubmitting(false);
     setPlusCode("");
@@ -102,6 +106,8 @@ export default function AdminSpotsPage() {
       address: s.address ?? "",
       lat: s.lat?.toString() ?? "",
       lng: s.lng?.toString() ?? "",
+      instagramUrl: s.instagramUrl ?? "",
+      websiteUrl: s.websiteUrl ?? "",
     });
   };
 
@@ -214,6 +220,31 @@ export default function AdminSpotsPage() {
               </div>
             </div>
 
+            {/* SNSリンク */}
+            <div className="bg-purple-50 border border-purple-100 rounded-lg p-3 space-y-2">
+              <p className="text-xs font-semibold text-purple-700 mb-1.5">📱 SNSリンク（任意）</p>
+              <div className="flex items-center gap-2">
+                <span className="text-base">📷</span>
+                <input
+                  type="url"
+                  placeholder="InstagramページURL（例: https://www.instagram.com/xxx）"
+                  value={form.instagramUrl}
+                  onChange={(e) => setForm({ ...form, instagramUrl: e.target.value })}
+                  className="flex-1 border border-purple-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 bg-white"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-base">🌐</span>
+                <input
+                  type="url"
+                  placeholder="WebサイトURL（HP・FacebookページなどのURL）"
+                  value={form.websiteUrl}
+                  onChange={(e) => setForm({ ...form, websiteUrl: e.target.value })}
+                  className="flex-1 border border-purple-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 bg-white"
+                />
+              </div>
+            </div>
+
             <div className="flex gap-2">
               <button
                 type="submit"
@@ -227,7 +258,7 @@ export default function AdminSpotsPage() {
                   type="button"
                   onClick={() => {
                     setEditing(null);
-                    setForm({ courseId: courses[0]?.id ?? "", name: "", description: "", address: "", lat: "", lng: "" });
+                    setForm({ courseId: courses[0]?.id ?? "", name: "", description: "", address: "", lat: "", lng: "", instagramUrl: "", websiteUrl: "" });
                   }}
                   className="px-4 bg-gray-100 text-gray-600 py-2 rounded-lg text-sm"
                 >
@@ -253,6 +284,16 @@ export default function AdminSpotsPage() {
                     {s.address && <p className="text-xs text-gray-400 mt-0.5">{s.address}</p>}
                     {s.lat && s.lng && (
                       <p className="text-xs text-gray-300 mt-0.5">{s.lat.toFixed(4)}, {s.lng.toFixed(4)}</p>
+                    )}
+                    {(s.instagramUrl || s.websiteUrl) && (
+                      <div className="flex gap-2 mt-1">
+                        {s.instagramUrl && (
+                          <a href={s.instagramUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-purple-500 hover:underline">📷 Instagram</a>
+                        )}
+                        {s.websiteUrl && (
+                          <a href={s.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline">🌐 Webサイト</a>
+                        )}
+                      </div>
                     )}
                   </div>
                   <div className="flex gap-2">
