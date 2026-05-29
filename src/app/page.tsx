@@ -101,7 +101,7 @@ function HomeContent() {
           href="/stamps"
           className="block w-full bg-white border border-emerald-200 text-emerald-700 text-center font-semibold py-3 rounded-xl mb-6 shadow-sm hover:bg-emerald-50 transition"
         >
-          🎯 スタンプ帳を見る
+          🗺️ スタンプ地図帳を見る
         </Link>
 
         <section>
