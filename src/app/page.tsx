@@ -144,8 +144,11 @@ function HomeContent() {
         </section>
       </main>
 
-      <footer className="text-center text-xs text-gray-400 py-4">
-        © スタンプラリー実行委員会
+      <footer className="text-center text-xs text-gray-400 py-4 space-y-1">
+        <div>
+          <Link href="/guide" className="text-emerald-600 hover:underline text-sm">📖 使い方ガイド</Link>
+        </div>
+        <div>© スタンプラリー実行委員会</div>
       </footer>
     </div>
   );
