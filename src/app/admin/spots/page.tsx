@@ -229,19 +229,19 @@ export default function AdminSpotsPage() {
               <div className="flex-1">
                 <label className="block text-xs text-gray-500 mb-1">緯度 (lat)</label>
                 <input
-                  type="number" step="any" placeholder="35.681236"
+                  type="text" inputMode="decimal" placeholder="35.681236"
                   value={form.lat}
                   onChange={(e) => setForm({ ...form, lat: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 font-mono"
                 />
               </div>
               <div className="flex-1">
                 <label className="block text-xs text-gray-500 mb-1">経度 (lng)</label>
                 <input
-                  type="number" step="any" placeholder="139.767125"
+                  type="text" inputMode="decimal" placeholder="139.767125"
                   value={form.lng}
                   onChange={(e) => setForm({ ...form, lng: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 font-mono"
                 />
               </div>
             </div>
