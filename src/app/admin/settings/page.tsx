@@ -99,6 +99,8 @@ type Event = {
 };
 type EventWithCourses = Event & { courses: Course[] };
 
+type ImportResult = { added: number; updated: number; errors: string[] } | null;
+
 export default function AdminSettingsPage() {
   const [events, setEvents] = useState<EventWithCourses[]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,6 +112,8 @@ export default function AdminSettingsPage() {
   const [copyTarget, setCopyTarget] = useState("");
   const [copying, setCopying] = useState(false);
   const [copyResult, setCopyResult] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<ImportResult>(null);
   const router = useRouter();
 
   const load = async () => {
@@ -215,6 +219,42 @@ export default function AdminSettingsPage() {
     setCopying(false);
   };
 
+  const downloadCSV = async (endpoint: string, filename: string) => {
+    const res = await fetch(endpoint);
+    if (!res.ok) return;
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    setImportResult(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/admin/spots/import", { method: "POST", body: formData });
+      const data = await res.json();
+      if (res.ok) {
+        setImportResult(data);
+        load();
+      } else {
+        setImportResult({ added: 0, updated: 0, errors: [data.error ?? "インポートに失敗しました"] });
+      }
+    } catch {
+      setImportResult({ added: 0, updated: 0, errors: ["通信エラーが発生しました"] });
+    } finally {
+      setImporting(false);
+      e.target.value = "";
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <header className="bg-gray-800 text-white px-4 py-4 shadow flex items-center gap-3">
@@ -297,6 +337,61 @@ export default function AdminSettingsPage() {
             </div>
           </div>
         )}
+
+        {/* データ管理 */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-6">
+          <h2 className="font-bold text-gray-700 mb-3">📂 データ管理</h2>
+
+          <div className="mb-4">
+            <p className="text-xs text-gray-500 mb-2 font-semibold">エクスポート</p>
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={() => downloadCSV("/api/admin/spots/export", "spots.csv")}
+                className="flex-1 border border-emerald-200 text-emerald-700 py-2 rounded-lg text-sm font-semibold hover:bg-emerald-50 transition"
+              >
+                スポット一覧 (CSV)
+              </button>
+              <button
+                onClick={() => downloadCSV("/api/admin/courses/export", "courses.csv")}
+                className="flex-1 border border-emerald-200 text-emerald-700 py-2 rounded-lg text-sm font-semibold hover:bg-emerald-50 transition"
+              >
+                コース一覧 (CSV)
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs text-gray-500 mb-1 font-semibold">スポットをCSVからインポート</p>
+            <p className="text-xs text-gray-400 mb-2">
+              列: name, description, address, lat, lng, instagram_url, website_url, sort_order, course_name
+            </p>
+            <label className={`block w-full text-center border-2 border-dashed rounded-lg py-3 text-sm cursor-pointer transition
+              ${importing ? "border-gray-200 text-gray-300" : "border-gray-300 text-gray-500 hover:border-emerald-300 hover:text-emerald-600"}`}>
+              {importing ? "インポート中..." : "CSVファイルを選択"}
+              <input
+                type="file"
+                accept=".csv"
+                disabled={importing}
+                className="hidden"
+                onChange={handleImport}
+              />
+            </label>
+            {importResult && (
+              <div className={`mt-2 rounded-lg px-3 py-2 text-sm ${importResult.errors.length > 0 && importResult.added + importResult.updated === 0 ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}>
+                {(importResult.added > 0 || importResult.updated > 0) && (
+                  <p className="font-semibold">✓ {importResult.added}件追加・{importResult.updated}件更新しました</p>
+                )}
+                {importResult.errors.length > 0 && (
+                  <ul className="mt-1 space-y-0.5">
+                    {importResult.errors.map((err, i) => (
+                      <li key={i} className="text-xs text-red-600">⚠ {err}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* イベント一覧 */}
         {loading ? (
