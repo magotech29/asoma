@@ -20,7 +20,19 @@
       "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\admin\\\\courses\")",
       "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\admin\\\\spots\")",
       "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\admin\\\\qrcodes\")",
-      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\admin\\\\settings\")"
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\admin\\\\settings\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\" -Recurse -File)",
+      "Bash(Select-Object FullName)",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\api\\\\admin\\\\applications\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\api\\\\admin\\\\stats\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\admin\\\\applications\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\admin\\\\stats\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\super-admin\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\super-admin\\\\login\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\api\\\\super-admin\\\\login\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\api\\\\super-admin\\\\logout\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\api\\\\super-admin\\\\tenants\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\api\\\\tenant\\\\init\")"
     ]
   }
 }

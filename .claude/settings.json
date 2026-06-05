@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\docs\")",
+      "PowerShell(node -e \"const olc = require\\('open-location-code'\\); console.log\\(Object.keys\\(olc\\)\\)\")",
+      "PowerShell(node -e \"const {OpenLocationCode} = require\\('open-location-code'\\); const olc = new OpenLocationCode\\(\\); console.log\\(Object.getOwnPropertyNames\\(Object.getPrototypeOf\\(olc\\)\\)\\)\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\api\\\\admin\\\\events\\\\copy\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Dev\\\\asoma\\\\asoma\\\\src\\\\app\\\\api\\\\super-admin\\\\impersonate\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(npx tsx *)"
+    ]
+  }
+}
