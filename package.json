@@ -11,6 +11,7 @@
     "db:studio": "drizzle-kit studio",
     "db:generate": "drizzle-kit generate",
     "db:seed": "tsx scripts/seed.ts",
+    "db:seed-raw": "node scripts/seed-raw.mjs",
     "docs:pdf": "tsx scripts/generate-pdf.ts"
   },
   "dependencies": {
