@@ -4,40 +4,7 @@ import { spots, courses } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { requireAdminTenant } from "@/lib/auth";
 import { v4 as uuidv4 } from "uuid";
-
-function parseCSV(text: string): string[][] {
-  const normalized = text.replace(/\uFEFF/, "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
-  const lines = normalized.split("\n").filter((l) => l.trim() !== "");
-  return lines.map((line) => {
-    const fields: string[] = [];
-    let current = "";
-    let inQuotes = false;
-    for (let i = 0; i < line.length; i++) {
-      const ch = line[i];
-      if (inQuotes) {
-        if (ch === '"' && line[i + 1] === '"') {
-          current += '"';
-          i++;
-        } else if (ch === '"') {
-          inQuotes = false;
-        } else {
-          current += ch;
-        }
-      } else {
-        if (ch === '"') {
-          inQuotes = true;
-        } else if (ch === ",") {
-          fields.push(current);
-          current = "";
-        } else {
-          current += ch;
-        }
-      }
-    }
-    fields.push(current);
-    return fields;
-  });
-}
+import Papa from "papaparse";
 
 export async function POST(req: NextRequest) {
   try {
@@ -50,32 +17,31 @@ export async function POST(req: NextRequest) {
     }
 
     const text = await file.text();
-    const rows = parseCSV(text);
 
-    if (rows.length < 2) {
+    const parsed = Papa.parse<Record<string, string>>(text, {
+      header: true,
+      skipEmptyLines: true,
+      transformHeader: (h) => h.trim().toLowerCase(),
+    });
+
+    if (parsed.errors.length > 0 && parsed.data.length === 0) {
+      return NextResponse.json(
+        { error: "CSVの解析に失敗しました: " + parsed.errors[0].message },
+        { status: 400 }
+      );
+    }
+
+    if (parsed.data.length === 0) {
       return NextResponse.json({ error: "CSVにデータがありません" }, { status: 400 });
     }
 
-    const header = rows[0].map((h) => h.trim().toLowerCase());
-    const idx = (name: string) => header.indexOf(name);
-
-    const nameIdx = idx("name");
-    const courseIdx = idx("course_name");
-
-    if (nameIdx < 0 || courseIdx < 0) {
+    const headers = parsed.meta.fields ?? [];
+    if (!headers.includes("name") || !headers.includes("course_name")) {
       return NextResponse.json(
         { error: "CSVに name 列と course_name 列が必要です" },
         { status: 400 }
       );
     }
-
-    const descIdx = idx("description");
-    const addrIdx = idx("address");
-    const latIdx = idx("lat");
-    const lngIdx = idx("lng");
-    const igIdx = idx("instagram_url");
-    const webIdx = idx("website_url");
-    const sortIdx = idx("sort_order");
 
     const courseList = await db.query.courses.findMany({
       where: eq(courses.tenantId, tenant.id),
@@ -89,14 +55,13 @@ export async function POST(req: NextRequest) {
     let added = 0;
     let updated = 0;
     const errors: string[] = [];
-    const dataRows = rows.slice(1);
 
-    for (let i = 0; i < dataRows.length; i++) {
-      const row = dataRows[i];
-      const rowNum = i + 2;
+    for (let i = 0; i < parsed.data.length; i++) {
+      const row = parsed.data[i];
+      const rowNum = i + 2; // 1-indexed + header row
 
-      const name = row[nameIdx]?.trim() ?? "";
-      const courseName = row[courseIdx]?.trim() ?? "";
+      const name = row["name"]?.trim() ?? "";
+      const courseName = row["course_name"]?.trim() ?? "";
 
       if (!name) {
         errors.push(`${rowNum}行目: name が空です`);
@@ -113,18 +78,16 @@ export async function POST(req: NextRequest) {
         continue;
       }
 
+      const sortRaw = row["sort_order"]?.trim();
       const values = {
         name,
-        description: descIdx >= 0 ? row[descIdx]?.trim() || null : null,
-        address: addrIdx >= 0 ? row[addrIdx]?.trim() || null : null,
-        lat: latIdx >= 0 ? row[latIdx]?.trim() || null : null,
-        lng: lngIdx >= 0 ? row[lngIdx]?.trim() || null : null,
-        instagramUrl: igIdx >= 0 ? row[igIdx]?.trim() || null : null,
-        websiteUrl: webIdx >= 0 ? row[webIdx]?.trim() || null : null,
-        sortOrder:
-          sortIdx >= 0 && row[sortIdx]?.trim()
-            ? parseInt(row[sortIdx].trim(), 10) || 0
-            : 0,
+        description: row["description"]?.trim() || null,
+        address: row["address"]?.trim() || null,
+        lat: row["lat"]?.trim() || null,
+        lng: row["lng"]?.trim() || null,
+        instagramUrl: row["instagram_url"]?.trim() || null,
+        websiteUrl: row["website_url"]?.trim() || null,
+        sortOrder: sortRaw ? parseInt(sortRaw, 10) || 0 : 0,
         courseId: course.id,
         tenantId: tenant.id,
       };
