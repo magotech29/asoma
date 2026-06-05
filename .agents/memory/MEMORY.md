@@ -1,0 +1,1 @@
+- [asoma project setup](asoma-setup.md) — Next.js 16 stamp rally service; runs on port 3000 via "asoma" workflow; DB schema pushed via drizzle-kit push
