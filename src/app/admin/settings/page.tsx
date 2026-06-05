@@ -114,6 +114,8 @@ export default function AdminSettingsPage() {
   const [copyResult, setCopyResult] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult>(null);
+  const [importingCourses, setImportingCourses] = useState(false);
+  const [importCourseResult, setImportCourseResult] = useState<ImportResult>(null);
   const router = useRouter();
 
   const load = async () => {
@@ -255,6 +257,30 @@ export default function AdminSettingsPage() {
     }
   };
 
+  const handleImportCourses = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportingCourses(true);
+    setImportCourseResult(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/admin/courses/import", { method: "POST", body: formData });
+      const data = await res.json();
+      if (res.ok) {
+        setImportCourseResult(data);
+        load();
+      } else {
+        setImportCourseResult({ added: 0, updated: 0, errors: [data.error ?? "インポートに失敗しました"] });
+      }
+    } catch {
+      setImportCourseResult({ added: 0, updated: 0, errors: ["通信エラーが発生しました"] });
+    } finally {
+      setImportingCourses(false);
+      e.target.value = "";
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <header className="bg-gray-800 text-white px-4 py-4 shadow flex items-center gap-3">
@@ -358,6 +384,38 @@ export default function AdminSettingsPage() {
                 コース一覧 (CSV)
               </button>
             </div>
+          </div>
+
+          <div className="mb-4">
+            <p className="text-xs text-gray-500 mb-1 font-semibold">コースをCSVからインポート</p>
+            <p className="text-xs text-gray-400 mb-2">
+              列: name, description, distance_km, duration_min, sort_order
+            </p>
+            <label className={`block w-full text-center border-2 border-dashed rounded-lg py-3 text-sm cursor-pointer transition
+              ${importingCourses ? "border-gray-200 text-gray-300" : "border-gray-300 text-gray-500 hover:border-emerald-300 hover:text-emerald-600"}`}>
+              {importingCourses ? "インポート中..." : "CSVファイルを選択"}
+              <input
+                type="file"
+                accept=".csv"
+                disabled={importingCourses}
+                className="hidden"
+                onChange={handleImportCourses}
+              />
+            </label>
+            {importCourseResult && (
+              <div className={`mt-2 rounded-lg px-3 py-2 text-sm ${importCourseResult.errors.length > 0 && importCourseResult.added + importCourseResult.updated === 0 ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}>
+                {(importCourseResult.added > 0 || importCourseResult.updated > 0) && (
+                  <p className="font-semibold">✓ {importCourseResult.added}件追加・{importCourseResult.updated}件更新しました</p>
+                )}
+                {importCourseResult.errors.length > 0 && (
+                  <ul className="mt-1 space-y-0.5">
+                    {importCourseResult.errors.map((err, i) => (
+                      <li key={i} className="text-xs text-red-600">⚠ {err}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </div>
 
           <div>
