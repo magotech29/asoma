@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>コミュニティ管理者マニュアル</title>
+  <style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap');
+
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+    font-size: 13px;
+    line-height: 1.9;
+    color: #1f2937;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 24px 48px 48px;
+  }
+  h1 {
+    font-size: 20px;
+    border-bottom: 3px solid #10b981;
+    padding-bottom: 10px;
+    color: #065f46;
+    margin-top: 0;
+  }
+  h2 {
+    font-size: 15px;
+    border-left: 5px solid #10b981;
+    padding-left: 10px;
+    margin-top: 32px;
+    color: #047857;
+    background: #f0fdf4;
+    padding: 6px 10px;
+    border-radius: 0 4px 4px 0;
+  }
+  h3 { font-size: 13px; color: #374151; margin-top: 20px; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 14px 0;
+    font-size: 12px;
+  }
+  th {
+    background: #d1fae5;
+    padding: 8px 12px;
+    border: 1px solid #6ee7b7;
+    text-align: left;
+  }
+  td { padding: 7px 12px; border: 1px solid #d1d5db; }
+  tr:nth-child(even) td { background: #f9fafb; }
+  code {
+    background: #f3f4f6;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #dc2626;
+  }
+  pre {
+    background: #f3f4f6;
+    padding: 14px;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    overflow-x: auto;
+    font-size: 12px;
+  }
+  pre code { color: #374151; background: none; padding: 0; }
+  blockquote {
+    border-left: 4px solid #6ee7b7;
+    margin: 14px 0;
+    padding: 6px 16px;
+    background: #f0fdf4;
+    color: #374151;
+    border-radius: 0 4px 4px 0;
+  }
+  hr { border: none; border-top: 1px solid #e5e7eb; margin: 24px 0; }
+  ul, ol { padding-left: 24px; }
+  li { margin: 4px 0; }
+  strong { color: #111827; }
+
+  @media print {
+    body { padding: 0; }
+    h2 { break-before: avoid; }
+    table { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<h1>コミュニティ管理者マニュアル</h1>
+<h2>ぐるっとスタンプラリー 管理画面操作ガイド</h2>
+<p>最終更新：2026年5月</p>
+<hr>
+<h2>1. ログイン</h2>
+<p>スーパー管理者から発行された <strong>管理者URL</strong> をブラウザで開いてください。</p>
+<pre><code>https://asoma.mago-t.com/admin/login?t=XXXXXXXX
+</code></pre>
+<p>パスワードを入力してログインします（メールアドレスは不要）。</p>
+<blockquote>
+<p>ログインセッションは <strong>8時間</strong> で切れます。再度URLを開いてログインしてください。</p>
+</blockquote>
+<hr>
+<h2>2. 管理画面の構成</h2>
+<p>ログイン後、画面最上部に現在管理中のコミュニティ名が緑色のバナーで表示されます。</p>
+<pre><code>管理中：春日市スタンプラリー
+</code></pre>
+<p>メニューは以下の通りです。</p>
+<table>
+<thead>
+<tr>
+<th>メニュー</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>📊 統計</td>
+<td>参加者数・完走率・スポット訪問数の確認</td>
+</tr>
+<tr>
+<td>🎁 景品応募者</td>
+<td>応募者一覧・当選/落選の管理</td>
+</tr>
+<tr>
+<td>🗺️ コース管理</td>
+<td>ウォーキングコースの追加・編集・削除</td>
+</tr>
+<tr>
+<td>📍 スポット管理</td>
+<td>チェックポイントの追加・編集・削除</td>
+</tr>
+<tr>
+<td>🔲 QRコード</td>
+<td>QRコードの表示・印刷</td>
+</tr>
+<tr>
+<td>⚙️ イベント管理</td>
+<td>開催期間・コース構成の管理</td>
+</tr>
+</tbody></table>
+<p>画面下部の「参加者画面を見る →」をタップすると、自分のコミュニティの参加者画面を確認できます。</p>
+<hr>
+<h2>3. 運営の流れ（初回セットアップ）</h2>
+<pre><code>① イベントを作成（⚙️ イベント管理）
+      ↓
+② コースを追加（🗺️ コース管理）
+      ↓
+③ スポットを追加（📍 スポット管理）
+      ↓
+④ QRコードを印刷して設置（🔲 QRコード）
+      ↓
+⑤ 参加者URLを配布してスタート
+</code></pre>
+<hr>
+<h2>4. イベント管理</h2>
+<p>イベントとは「スタンプラリーの開催期間と名称」をまとめた単位です。<br>1つのイベントに複数のコースを紐づけます。</p>
+<h3>イベントの追加</h3>
+<ol>
+<li>「⚙️ イベント管理」をタップ</li>
+<li>フォームに入力<ul>
+<li><strong>イベント名</strong>：例）春日市ウォーキングラリー2026春</li>
+<li><strong>説明</strong>（任意）</li>
+<li><strong>開始日時 / 終了日時</strong>：日付・時・分（15分単位）を選択<ul>
+<li>日時はすべて <strong>日本時間（JST）</strong> で設定してください</li>
+<li>分は 00 / 15 / 30 / 45 の4択から選択します</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>「追加」ボタンをタップ</li>
+<li>「✓ イベントを追加しました」と表示されれば成功</li>
+</ol>
+<h3>イベントの開始・停止</h3>
+<ul>
+<li>イベント一覧の「開始」「停止」ボタンで切り替え</li>
+<li><strong>「開催中」かつ開催期間内のイベントのコースのみ参加者画面に表示されます</strong></li>
+</ul>
+<h3>コース・スポット構成の確認</h3>
+<p>イベント一覧に、紐づくコースとスポットがツリー表示されます。</p>
+<h3>前回イベントからのコピー</h3>
+<p>イベントが2つ以上ある場合、コース・スポット構成をまるごとコピーできます（QRコードは新規発行）。</p>
+<hr>
+<h2>5. コース管理</h2>
+<p>コースはイベントに紐づけて作成します。</p>
+<ol>
+<li>「🗺️ コース管理」をタップ</li>
+<li><strong>イベントを先に選択</strong>（必須）</li>
+<li>コース名・説明・距離・所要時間を入力</li>
+<li>「追加」ボタンをタップ</li>
+</ol>
+<blockquote>
+<p>イベントがない場合は先に「⚙️ イベント管理」でイベントを作成してください。</p>
+</blockquote>
+<hr>
+<h2>6. スポット管理</h2>
+<p>スポットはコースに紐づけて作成します。</p>
+<ol>
+<li>「📍 スポット管理」をタップ</li>
+<li>コースを選択（必須）</li>
+<li>スポット名・説明・住所を入力</li>
+</ol>
+<p><strong>位置情報の入力（Google マップから）：</strong></p>
+<ul>
+<li><strong>PCの場合：</strong> Google マップでスポットを右クリック → 表示される数字（例: <code>33.5298, 130.4688</code>）をクリックでコピー → 緑の入力欄に貼り付けて「入力」</li>
+<li><strong>スマホの場合：</strong> Google マップでスポットを長押し → 上部の数字をタップしてコピー → 貼り付けて「入力」</li>
+</ul>
+<p>緯度・経度が自動入力されます。</p>
+<blockquote>
+<p>スポットを追加するとQRコードが自動生成されます。</p>
+</blockquote>
+<hr>
+<h2>7. QRコードの発行・設置</h2>
+<ol>
+<li>「🔲 QRコード」をタップ</li>
+<li>右上の「印刷」ボタンから印刷</li>
+</ol>
+<p><strong>設置のポイント：</strong></p>
+<ul>
+<li>ラミネート加工推奨（雨・汚れ対策）</li>
+<li>目線の高さに設置</li>
+<li>最小サイズ 5cm × 5cm 以上</li>
+</ul>
+<hr>
+<h2>8. 統計の確認</h2>
+<table>
+<thead>
+<tr>
+<th>指標</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>参加者数</td>
+<td>スタンプを1つ以上取得した人数</td>
+</tr>
+<tr>
+<td>スタンプ取得数</td>
+<td>全参加者の取得合計</td>
+</tr>
+<tr>
+<td>完走者数</td>
+<td>全スポットを制覇した参加者数</td>
+</tr>
+<tr>
+<td>完走率</td>
+<td>完走者数 ÷ 参加者数（%）</td>
+</tr>
+<tr>
+<td>スポット別訪問数</td>
+<td>各スポットの訪問回数ランキング</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>9. 景品応募者の管理</h2>
+<ol>
+<li>「🎁 景品応募者」をタップ</li>
+<li>応募者の名前・連絡先・応募日時が一覧表示</li>
+</ol>
+<p><strong>ステータスの変更：</strong>「当選」「落選」「戻す」ボタンで管理</p>
+<blockquote>
+<p>当選者への連絡は管理者が別途行ってください。自動通知機能はありません。</p>
+</blockquote>
+<hr>
+<h2>10. 参加者URLの案内</h2>
+<p>参加者がアクセスするURLは、スーパー管理者から発行されます。</p>
+<pre><code>https://asoma.mago-t.com/?t=XXXXXXXX
+</code></pre>
+<p>管理画面の「参加者画面を見る →」からも確認できます。</p>
+<blockquote>
+<p><strong>重要：</strong> 参加者はこのURLから入場しないとスタンプを取得できません。</p>
+</blockquote>
+<hr>
+<h2>11. よくある質問</h2>
+<p><strong>Q: イベントを追加したがコースが表示されない</strong><br>A: コース管理でそのイベントにコースを追加してください。</p>
+<p><strong>Q: 参加者画面にコースが表示されない</strong><br>A: イベントが「開催中」かつ開催期間内かどうか確認してください。</p>
+<p><strong>Q: QRコードが読み取れないと言われた</strong><br>A: 印刷サイズ（5cm×5cm以上）・汚れ・明るさを確認してください。</p>
+<p><strong>Q: パスワードを変更したい</strong><br>A: スーパー管理者に連絡してパスワードの変更を依頼してください。</p>
+
+</body>
+</html>

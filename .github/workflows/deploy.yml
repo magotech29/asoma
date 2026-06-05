@@ -1,0 +1,16 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - vps-deploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger deploy webhook
+        run: |
+          curl -s -X POST https://133.18.181.82:5002/deploy/asoma \
+            -H "Authorization: Bearer ${{ secrets.DEPLOY_WEBHOOK_TOKEN }}" \
+            --retry 3

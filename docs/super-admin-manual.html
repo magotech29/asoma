@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>スーパー管理者マニュアル</title>
+  <style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap');
+
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+    font-size: 13px;
+    line-height: 1.9;
+    color: #1f2937;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 24px 48px 48px;
+  }
+  h1 {
+    font-size: 20px;
+    border-bottom: 3px solid #10b981;
+    padding-bottom: 10px;
+    color: #065f46;
+    margin-top: 0;
+  }
+  h2 {
+    font-size: 15px;
+    border-left: 5px solid #10b981;
+    padding-left: 10px;
+    margin-top: 32px;
+    color: #047857;
+    background: #f0fdf4;
+    padding: 6px 10px;
+    border-radius: 0 4px 4px 0;
+  }
+  h3 { font-size: 13px; color: #374151; margin-top: 20px; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 14px 0;
+    font-size: 12px;
+  }
+  th {
+    background: #d1fae5;
+    padding: 8px 12px;
+    border: 1px solid #6ee7b7;
+    text-align: left;
+  }
+  td { padding: 7px 12px; border: 1px solid #d1d5db; }
+  tr:nth-child(even) td { background: #f9fafb; }
+  code {
+    background: #f3f4f6;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #dc2626;
+  }
+  pre {
+    background: #f3f4f6;
+    padding: 14px;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    overflow-x: auto;
+    font-size: 12px;
+  }
+  pre code { color: #374151; background: none; padding: 0; }
+  blockquote {
+    border-left: 4px solid #6ee7b7;
+    margin: 14px 0;
+    padding: 6px 16px;
+    background: #f0fdf4;
+    color: #374151;
+    border-radius: 0 4px 4px 0;
+  }
+  hr { border: none; border-top: 1px solid #e5e7eb; margin: 24px 0; }
+  ul, ol { padding-left: 24px; }
+  li { margin: 4px 0; }
+  strong { color: #111827; }
+
+  @media print {
+    body { padding: 0; }
+    h2 { break-before: avoid; }
+    table { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<h1>スーパー管理者マニュアル</h1>
+<h2>ぐるっとスタンプラリー スーパー管理者画面操作ガイド</h2>
+<p>最終更新：2026年5月</p>
+<hr>
+<h2>1. スーパー管理者とは</h2>
+<p>スーパー管理者は、システム全体を統括する最上位の権限です。</p>
+<table>
+<thead>
+<tr>
+<th>権限</th>
+<th align="center">スーパー管理者</th>
+<th align="center">コミュニティ管理者</th>
+<th align="center">参加者</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>コミュニティの作成・編集</td>
+<td align="center">✓</td>
+<td align="center">—</td>
+<td align="center">—</td>
+</tr>
+<tr>
+<td>管理者URLの発行</td>
+<td align="center">✓</td>
+<td align="center">—</td>
+<td align="center">—</td>
+</tr>
+<tr>
+<td>参加者URLの発行</td>
+<td align="center">✓</td>
+<td align="center">—</td>
+<td align="center">—</td>
+</tr>
+<tr>
+<td>コミュニティ管理画面への直接入場</td>
+<td align="center">✓</td>
+<td align="center">—</td>
+<td align="center">—</td>
+</tr>
+<tr>
+<td>イベント・コース・スポット管理</td>
+<td align="center">✓（代理）</td>
+<td align="center">✓</td>
+<td align="center">—</td>
+</tr>
+<tr>
+<td>統計・応募者確認</td>
+<td align="center">✓（代理）</td>
+<td align="center">✓</td>
+<td align="center">—</td>
+</tr>
+<tr>
+<td>QRコード印刷</td>
+<td align="center">✓（代理）</td>
+<td align="center">✓</td>
+<td align="center">—</td>
+</tr>
+<tr>
+<td>スタンプ収集</td>
+<td align="center">—</td>
+<td align="center">—</td>
+<td align="center">✓</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>2. ログイン</h2>
+<p>スーパー管理者専用のURLにアクセスします。</p>
+<pre><code>https://asoma.mago-t.com/super-admin/login
+</code></pre>
+<p><strong>メールアドレス</strong>と<strong>パスワード</strong>を入力してログインします。<br>（認証情報はサーバー環境変数 <code>SUPER_ADMIN_EMAIL</code> / <code>SUPER_ADMIN_PASSWORD</code> で管理されています）</p>
+<blockquote>
+<p>ログインセッションは <strong>8時間</strong> で切れます。再度ログインしてください。</p>
+</blockquote>
+<hr>
+<h2>3. 画面の構成</h2>
+<p>ログイン後、スーパー管理者画面が表示されます。</p>
+<pre><code>┌────────────────────────────────┐
+│ スーパー管理者 テナント管理     │
+├────────────────────────────────┤
+│ 新しいコミュニティを追加        │
+│ ┌────────────────────────────┐ │
+│ │ コミュニティ名             │ │
+│ │ 管理者パスワード           │ │
+│ │ [コミュニティを作成]       │ │
+│ └────────────────────────────┘ │
+│                                │
+│ コミュニティ一覧（N件）         │
+│ ┌────────────────────────────┐ │
+│ │ ○○市スタンプラリー  [有効] │ │
+│ │ 作成日: 2026/01/01         │ │
+│ │ [🔑管理画面を開く]         │ │
+│ │ [📋参加者URL][📋管理者URL] │ │
+│ └────────────────────────────┘ │
+└────────────────────────────────┘
+</code></pre>
+<hr>
+<h2>4. コミュニティの作成</h2>
+<p>新しいコミュニティ（テナント）を作成します。</p>
+<ol>
+<li>画面上部の「新しいコミュニティを追加」フォームに入力<ul>
+<li><strong>コミュニティ名</strong>（必須）：例）春日市ウォーキングラリー2026</li>
+<li><strong>管理者パスワード</strong>（必須）：このコミュニティの管理画面ログインに使うパスワード（8文字以上推奨）</li>
+</ul>
+</li>
+<li>「コミュニティを作成」ボタンをタップ</li>
+<li>コミュニティ一覧に追加されれば成功</li>
+</ol>
+<blockquote>
+<p>作成と同時に <strong>8文字のアクセストークン</strong> が自動生成されます。<br>このトークンが参加者URL・管理者URLに使われます。</p>
+</blockquote>
+<hr>
+<h2>5. URLの発行・コピー</h2>
+<p>各コミュニティに対して2種類のURLが自動発行されます。</p>
+<h3>参加者URL</h3>
+<p>スタンプラリーに参加する一般ユーザーが使うURL。</p>
+<pre><code>https://asoma.mago-t.com/?t=XXXXXXXX
+</code></pre>
+<ul>
+<li>コミュニティ一覧の「📋 参加者URL」ボタンをタップ → クリップボードにコピー</li>
+<li>チラシ・SNS・回覧板などで参加者に配布する</li>
+</ul>
+<h3>管理者URL</h3>
+<p>コミュニティ管理者がログインするためのURL。</p>
+<pre><code>https://asoma.mago-t.com/admin/login?t=XXXXXXXX
+</code></pre>
+<ul>
+<li>コミュニティ一覧の「📋 管理者URL」ボタンをタップ → クリップボードにコピー</li>
+<li>担当のコミュニティ管理者にこのURLとパスワードを伝える</li>
+</ul>
+<blockquote>
+<p><strong>重要：</strong> URLに含まれる <code>t=XXXXXXXX</code> がそのコミュニティの識別子です。<br>参加者・管理者ともに、このURLから入らないとアクセスできません。</p>
+</blockquote>
+<hr>
+<h2>6. コミュニティの編集</h2>
+<p>既存コミュニティの情報を変更できます。</p>
+<ol>
+<li>コミュニティ一覧の該当コミュニティ右上の「編集」ボタンをタップ</li>
+<li>変更したい項目を入力<ul>
+<li><strong>コミュニティ名</strong>：名称を変更</li>
+<li><strong>新しいパスワード</strong>：変更しない場合は空欄のままでOK</li>
+</ul>
+</li>
+<li>「保存」ボタンをタップ</li>
+</ol>
+<hr>
+<h2>7. コミュニティ管理画面への入場（代理操作）</h2>
+<p>スーパー管理者は、任意のコミュニティの管理画面に直接入場できます。<br>コミュニティ管理者と同等のすべての操作が可能です。</p>
+<ol>
+<li>対象コミュニティの「🔑 管理画面を開く」ボタンをタップ</li>
+<li>そのコミュニティの管理画面（<code>/admin</code>）に自動遷移</li>
+</ol>
+<blockquote>
+<p>管理画面の左上に管理中のコミュニティ名が <strong>緑のバナー</strong> で表示されます。<br>例）<code>管理中：春日市スタンプラリー</code></p>
+</blockquote>
+<h3>スーパー管理者画面に戻る</h3>
+<p>管理画面ヘッダー右上の「<strong>← スーパー管理者</strong>」リンクをタップすると、<br>スーパー管理者画面に戻れます。</p>
+<hr>
+<h2>8. 代理操作でできること</h2>
+<p>コミュニティ管理画面に入場した状態で、以下のすべての操作が可能です。</p>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>📊 統計</td>
+<td>参加者数・完走率・スポット訪問数の確認</td>
+</tr>
+<tr>
+<td>🎁 景品応募者</td>
+<td>応募者一覧・当選/落選の管理</td>
+</tr>
+<tr>
+<td>🗺️ コース管理</td>
+<td>コースの追加・編集・削除</td>
+</tr>
+<tr>
+<td>📍 スポット管理</td>
+<td>チェックポイントの追加・編集・削除</td>
+</tr>
+<tr>
+<td>🔲 QRコード</td>
+<td>QRコードの表示・印刷</td>
+</tr>
+<tr>
+<td>⚙️ イベント管理</td>
+<td>開催期間・コース構成の管理・コピー</td>
+</tr>
+</tbody></table>
+<p>詳細な操作手順は <strong>コミュニティ管理者マニュアル</strong> を参照してください。</p>
+<hr>
+<h2>9. 運営の流れ（初回セットアップ）</h2>
+<pre><code>① コミュニティを作成（スーパー管理者画面）
+      ↓
+② 管理者URLとパスワードをコミュニティ管理者に連絡
+      ↓
+③ 参加者URLを配布素材に使えるよう連絡
+      ↓
+④ 必要に応じて「管理画面を開く」で代理セットアップ
+      ↓
+⑤ コミュニティ管理者がイベント・コース・スポット・QRを設定
+      ↓
+⑥ 開催スタート
+</code></pre>
+<hr>
+<h2>10. よくある質問</h2>
+<p><strong>Q: コミュニティを削除したい</strong><br>A: 現在、削除機能はありません。不要なコミュニティは無効化（将来予定）するか、スーパー管理者に連絡してください。</p>
+<p><strong>Q: 参加者URLを変えたい</strong><br>A: URLに含まれるトークンは変更できません。新しいコミュニティを作成し、URLを再配布する必要があります。</p>
+<p><strong>Q: パスワードを忘れた（スーパー管理者自身のパスワード）</strong><br>A: サーバーの環境変数 <code>SUPER_ADMIN_PASSWORD</code> を変更して再起動してください。</p>
+<p><strong>Q: コミュニティ管理者がパスワードを忘れた</strong><br>A: スーパー管理者画面から当該コミュニティを「編集」し、新しいパスワードを設定してください。</p>
+<p><strong>Q: 複数のコミュニティを同時に管理できるか</strong><br>A: 画面上は1つずつ入場する形になります。ブラウザのタブを分けて複数管理することは可能です。</p>
+
+</body>
+</html>

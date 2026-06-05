@@ -1,19 +1,11 @@
-# asoma
+# asoma — ぐるっとスタンプラリー
 
-asomaは、スタンプラリー形式のイベント管理サービスです（マルチテナント対応）。
+地域コミュニティ向けのQRコード型デジタルスタンプラリーサービス（マルチテナント）の継続開発プロジェクト。
 
 ## GitHub連携
 
-このReplitプロジェクトは `https://github.com/magotech29/asoma` に接続済みです。
-
-### 初回セットアップ（masterブランチへ切り替え）
-
-Replitのシェルを開いて以下を実行してください：
-
-```bash
-git checkout -b master origin/master
-git config init.defaultBranch master
-```
+- リポジトリ: `https://github.com/magotech29/asoma`
+- デフォルトブランチ: `master`
 
 ### 日常の開発フロー
 
@@ -29,47 +21,48 @@ git push origin master
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+```bash
+# 開発サーバー起動
+pnpm dev          # または npm run dev
+
+# DB操作
+pnpm db:push      # スキーマをDBに反映
+pnpm db:studio    # Drizzle Studio（DB確認）
+pnpm db:seed      # シードデータ投入
+```
+
+必要な環境変数（Replitのシークレットに設定）:
+- `DATABASE_URL` — PostgreSQL接続文字列
 
 ## Stack
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- Next.js 16 (App Router)
+- PostgreSQL + Drizzle ORM
+- Tailwind CSS v4
+- html5-qrcode（QRスキャン）
+- Supabase（認証・ストレージ）
 
 ## Where things live
 
-- `lib/api-spec/openapi.yaml` — API contract (source of truth)
-- `lib/db/src/schema/` — DB schema (source of truth)
-- `artifacts/api-server/src/routes/` — Express route handlers
+- `src/app/` — Next.js App Router ページ・APIルート
+- `src/lib/db/schema.ts` — DBスキーマ（ソースオブトゥルース）
+- `src/lib/` — 認証・DB・セッション・テナントユーティリティ
+- `scripts/` — シード・PDF生成スクリプト
 
-## Architecture decisions
+## Roles & URLs
 
-- `origin` remote = `https://github.com/magotech29/asoma` (master branch is default)
-- Replit workspace branch: switch to `master` via shell on first use
-
-## Product
-
-スタンプラリー形式のイベント管理。QRコードスキャンによるスポットチェックイン、テナント管理、参加者ガイド機能を持つ。
+| ロール | URL |
+|--------|-----|
+| スーパー管理者 | `/super-admin/login` |
+| テナント管理者 | `/admin/login?t=TOKEN` |
+| 参加者 | `/?t=TOKEN` |
 
 ## User preferences
 
 - GitHubのmasterブランチをメインとして使う
-- ReplitでコードをしてGitHubへ反映するフローで開発する
+- ReplitでコードしてGitHubへ反映するフローで開発する
 
 ## Gotchas
 
-- Replitエージェントはgit checkout等のgit操作を直接実行できない。シェルで手動実行が必要。
-- masterブランチへの切り替えは初回のみ手動で `git checkout -b master origin/master` を実行する。
-
-## Pointers
-
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- Replitエージェントはgit checkout等のgit操作を直接実行できない（lock-fileガード）。ブランチ切り替えはシェルで手動実行。
+- `DATABASE_URL` が未設定だとDB接続エラーになる。ReplitのSecretsに設定必要。
