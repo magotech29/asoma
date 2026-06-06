@@ -116,6 +116,12 @@ export default function AdminSettingsPage() {
   const [importResult, setImportResult] = useState<ImportResult>(null);
   const [importingCourses, setImportingCourses] = useState(false);
   const [importCourseResult, setImportCourseResult] = useState<ImportResult>(null);
+  const [importingBulk, setImportingBulk] = useState(false);
+  const [importBulkResult, setImportBulkResult] = useState<{
+    courses: { added: number; updated: number };
+    spots: { added: number; updated: number };
+    errors: string[];
+  } | null>(null);
   const router = useRouter();
 
   const load = async () => {
@@ -257,6 +263,30 @@ export default function AdminSettingsPage() {
     }
   };
 
+  const handleImportBulk = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportingBulk(true);
+    setImportBulkResult(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/admin/import/bulk", { method: "POST", body: formData });
+      const data = await res.json();
+      if (res.ok) {
+        setImportBulkResult(data);
+        load();
+      } else {
+        setImportBulkResult({ courses: { added: 0, updated: 0 }, spots: { added: 0, updated: 0 }, errors: [data.error ?? "インポートに失敗しました"] });
+      }
+    } catch {
+      setImportBulkResult({ courses: { added: 0, updated: 0 }, spots: { added: 0, updated: 0 }, errors: ["通信エラーが発生しました"] });
+    } finally {
+      setImportingBulk(false);
+      e.target.value = "";
+    }
+  };
+
   const handleImportCourses = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -367,6 +397,47 @@ export default function AdminSettingsPage() {
         {/* データ管理 */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-6">
           <h2 className="font-bold text-gray-700 mb-3">📂 データ管理</h2>
+
+          {/* 一括インポート */}
+          <div className="mb-5 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+            <p className="text-xs text-emerald-800 mb-1 font-semibold">⚡ 全部まとめてインポート（コース＋スポット）</p>
+            <p className="text-xs text-gray-500 mb-1">
+              <span className="font-mono bg-white px-1 rounded">type</span> 列で種別を指定した1つのCSVファイルをアップロードします。
+              コース行が先に処理され、スポットは <span className="font-mono bg-white px-1 rounded">course_name</span> で紐付けられます。
+            </p>
+            <p className="text-xs text-gray-400 mb-2">
+              コース列: type=course, name, description, distance_km, duration_min, sort_order<br />
+              スポット列: type=spot, name, description, address, lat, lng, instagram_url, website_url, sort_order, course_name
+            </p>
+            <label className={`block w-full text-center border-2 border-dashed rounded-lg py-3 text-sm font-semibold cursor-pointer transition
+              ${importingBulk ? "border-emerald-200 text-emerald-300" : "border-emerald-300 text-emerald-700 hover:border-emerald-500 hover:bg-emerald-100"}`}>
+              {importingBulk ? "インポート中..." : "一括CSVファイルを選択"}
+              <input
+                type="file"
+                accept=".csv"
+                disabled={importingBulk}
+                className="hidden"
+                onChange={handleImportBulk}
+              />
+            </label>
+            {importBulkResult && (
+              <div className={`mt-2 rounded-lg px-3 py-2 text-sm ${importBulkResult.errors.length > 0 && importBulkResult.courses.added + importBulkResult.courses.updated + importBulkResult.spots.added + importBulkResult.spots.updated === 0 ? "bg-red-50 text-red-600" : "bg-white border border-emerald-200 text-emerald-700"}`}>
+                {(importBulkResult.courses.added + importBulkResult.courses.updated + importBulkResult.spots.added + importBulkResult.spots.updated) > 0 && (
+                  <p className="font-semibold">
+                    ✓ コース {importBulkResult.courses.added}件追加・{importBulkResult.courses.updated}件更新 ／
+                    スポット {importBulkResult.spots.added}件追加・{importBulkResult.spots.updated}件更新
+                  </p>
+                )}
+                {importBulkResult.errors.length > 0 && (
+                  <ul className="mt-1 space-y-0.5">
+                    {importBulkResult.errors.map((err, i) => (
+                      <li key={i} className="text-xs text-red-600">⚠ {err}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
 
           <div className="mb-4">
             <p className="text-xs text-gray-500 mb-2 font-semibold">エクスポート</p>
