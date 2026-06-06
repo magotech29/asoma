@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTenantByToken } from "@/lib/tenant";
-import { TENANT_TOKEN_COOKIE } from "@/lib/tenant";
+import { cookies } from "next/headers";
+import { getTenantByToken, TENANT_TOKEN_COOKIE } from "@/lib/tenant";
+import { SESSION_COOKIE } from "@/lib/session";
+import { db } from "@/lib/db";
+import { participants } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import { v4 as uuidv4 } from "uuid";
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,12 +17,31 @@ export async function POST(req: NextRequest) {
     if (!tenant || !tenant.isActive) {
       return NextResponse.json({ error: "Invalid token" }, { status: 404 });
     }
+
+    const cookieStore = await cookies();
+    const existingSession = cookieStore.get(SESSION_COOKIE)?.value;
+    const sessionToken = existingSession ?? uuidv4();
+
+    if (!existingSession) {
+      await db.insert(participants).values({
+        tenantId: tenant.id,
+        sessionToken,
+      });
+    }
+
     const response = NextResponse.json({ success: true, tenantName: tenant.name });
     response.cookies.set(TENANT_TOKEN_COOKIE, token, {
       httpOnly: true,
       maxAge: 60 * 60 * 24 * 30,
       path: "/",
     });
+    if (!existingSession) {
+      response.cookies.set(SESSION_COOKIE, sessionToken, {
+        httpOnly: true,
+        maxAge: 60 * 60 * 24 * 30,
+        path: "/",
+      });
+    }
     return response;
   } catch (e) {
     console.error(e);

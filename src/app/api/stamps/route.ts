@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
-import { spots, stampLogs, participants } from "@/lib/db/schema";
+import { spots, stampLogs } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
-import { v4 as uuidv4 } from "uuid";
-import { SESSION_COOKIE } from "@/lib/session";
+import { SESSION_COOKIE, getOrCreateParticipant } from "@/lib/session";
 import { requireTenant } from "@/lib/tenant";
 
 export async function POST(req: NextRequest) {
@@ -23,22 +22,8 @@ export async function POST(req: NextRequest) {
     }
 
     const cookieStore = await cookies();
-    const existingToken = cookieStore.get(SESSION_COOKIE)?.value;
-    let sessionToken: string = existingToken ?? uuidv4();
-
-    let participant = existingToken
-      ? await db.query.participants.findFirst({
-          where: eq(participants.sessionToken, existingToken),
-        })
-      : null;
-
-    if (!participant) {
-      const [created] = await db
-        .insert(participants)
-        .values({ tenantId: tenant.id, sessionToken })
-        .returning();
-      participant = created;
-    }
+    const existingSession = cookieStore.get(SESSION_COOKIE)?.value;
+    const { participant, token: sessionToken } = await getOrCreateParticipant(tenant.id);
 
     const existing = await db.query.stampLogs.findFirst({
       where: and(
@@ -56,8 +41,8 @@ export async function POST(req: NextRequest) {
       tenantId: tenant.id,
     });
 
-    const response = NextResponse.json({ success: true, spotName: spot.name, sessionToken });
-    if (!existingToken) {
+    const response = NextResponse.json({ success: true, spotName: spot.name });
+    if (!existingSession) {
       response.cookies.set(SESSION_COOKIE, sessionToken, {
         httpOnly: true,
         maxAge: 60 * 60 * 24 * 30,

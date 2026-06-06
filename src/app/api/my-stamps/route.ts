@@ -2,13 +2,13 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { participants, stampLogs } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { SESSION_COOKIE } from "@/lib/session";
 import { requireTenant } from "@/lib/tenant";
 
 export async function GET() {
   try {
-    await requireTenant();
+    const tenant = await requireTenant();
     const cookieStore = await cookies();
     const token = cookieStore.get(SESSION_COOKIE)?.value;
     if (!token) return NextResponse.json([]);
@@ -19,7 +19,10 @@ export async function GET() {
     if (!participant) return NextResponse.json([]);
 
     const logs = await db.query.stampLogs.findMany({
-      where: eq(stampLogs.participantId, participant.id),
+      where: and(
+        eq(stampLogs.participantId, participant.id),
+        eq(stampLogs.tenantId, tenant.id)
+      ),
     });
     return NextResponse.json(logs.map((l) => l.spotId));
   } catch (e: unknown) {
