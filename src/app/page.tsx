@@ -19,20 +19,26 @@ function HomeContent() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sessionExpired, setSessionExpired] = useState(false);
   const [tenantName, setTenantName] = useState<string | null>(null);
   const searchParams = useSearchParams();
 
   useEffect(() => {
     const token = searchParams.get("t");
 
+    const savedToken = localStorage.getItem("stamp_tenant_token");
+    const effectiveToken = token ?? savedToken;
+
     const init = async () => {
-      // トークンがあればcookieにセット
-      if (token) {
+      if (effectiveToken) {
+        if (effectiveToken !== savedToken) {
+          localStorage.setItem("stamp_tenant_token", effectiveToken);
+        }
         try {
           const res = await fetch("/api/tenant/init", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token }),
+            body: JSON.stringify({ token: effectiveToken }),
           });
           if (res.ok) {
             const data = await res.json();
@@ -49,11 +55,14 @@ function HomeContent() {
         }
       }
 
-      // コース一覧取得
       fetch("/api/courses")
         .then((r) => {
           if (r.status === 403) {
-            setError("アクセスURLが無効です。主催者から受け取ったURLを使用してください。");
+            if (effectiveToken) {
+              setSessionExpired(true);
+            } else {
+              setError("アクセスURLが無効です。主催者から受け取ったURLを使用してください。");
+            }
             return null;
           }
           if (!r.ok) throw new Error();
@@ -66,6 +75,65 @@ function HomeContent() {
 
     init();
   }, [searchParams]);
+
+  const handleRetry = async () => {
+    const savedToken = localStorage.getItem("stamp_tenant_token");
+    if (!savedToken) return;
+    setLoading(true);
+    setSessionExpired(false);
+    try {
+      const res = await fetch("/api/tenant/init", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: savedToken }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTenantName(data.tenantName);
+        const r = await fetch("/api/courses");
+        if (r.ok) {
+          const courses = await r.json();
+          setCourses(Array.isArray(courses) ? courses : []);
+        }
+      } else {
+        localStorage.removeItem("stamp_tenant_token");
+        setError("セッションの復元に失敗しました。主催者から受け取ったURLを再度開いてください。");
+      }
+    } catch {
+      setError("通信エラーが発生しました");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (sessionExpired) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <header className="bg-emerald-600 text-white px-4 py-4 shadow">
+          <h1 className="text-xl font-bold">🗺️ ぐるっとスタンプラリー</h1>
+        </header>
+        <main className="flex-1 flex items-center justify-center px-4">
+          <div className="text-center max-w-sm">
+            <p className="text-5xl mb-4">⏰</p>
+            <h2 className="text-lg font-bold text-gray-800 mb-2">セッションが期限切れです</h2>
+            <p className="text-gray-500 text-sm mb-6">
+              スタンプ記録はサーバーに保存されています。<br />
+              「再接続する」をタップして続きからご参加ください。
+            </p>
+            <button
+              onClick={handleRetry}
+              className="block w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-xl shadow transition mb-3"
+            >
+              🔄 再接続する
+            </button>
+            <p className="text-xs text-gray-400">
+              うまくいかない場合は、主催者から受け取ったURLを再度開いてください。
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   if (error) {
     return (
