@@ -31,8 +31,35 @@ pnpm db:studio    # Drizzle Studio（DB確認）
 pnpm db:seed      # シードデータ投入
 ```
 
+- `pnpm --filter @workspace/api-server run dev` — run the API server (port 8080, preview at `/api`)
+- `pnpm run typecheck` — full typecheck across all packages
+- `pnpm run build` — typecheck + build all packages
+- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
+- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
+
 必要な環境変数（Replitのシークレットに設定）:
-- `DATABASE_URL` — PostgreSQL接続文字列
+- `DATABASE_URL` — PostgreSQL接続文字列 (auto-provisioned by Replit)
+
+## Environment Setup (first time)
+
+All required environment variables are auto-provisioned by Replit:
+
+- `DATABASE_URL` — managed Postgres connection string
+- `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD` — individual PG connection params
+- `SESSION_SECRET` — session signing secret
+
+**To verify DB schema is in sync:**
+
+```bash
+pnpm --filter @workspace/db run push
+```
+
+**API server health check:**
+
+```bash
+curl localhost:80/api/healthz
+# → {"status":"ok"}
+```
 
 ## Stack
 
