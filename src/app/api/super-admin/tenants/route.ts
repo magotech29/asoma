@@ -33,15 +33,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   try {
-    const { name, adminPassword } = await req.json();
+    const { name, adminPassword, sessionMaxAgeDays } = await req.json();
     if (!name || !adminPassword) {
       return NextResponse.json({ error: "name and adminPassword required" }, { status: 400 });
     }
 
+    const days = typeof sessionMaxAgeDays === "number" && sessionMaxAgeDays > 0
+      ? Math.floor(sessionMaxAgeDays)
+      : 30;
+
     const tenantToken = generateToken();
-    const slug = tenantToken; // 自動生成
+    const slug = tenantToken;
     const [tenant] = await db.insert(tenants)
-      .values({ name, slug, tenantToken, adminPasswordHash: hashPassword(adminPassword) })
+      .values({
+        name,
+        slug,
+        tenantToken,
+        adminPasswordHash: hashPassword(adminPassword),
+        sessionMaxAgeDays: days,
+      })
       .returning();
 
     return NextResponse.json(tenant, { status: 201 });
@@ -58,11 +68,18 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   try {
-    const { id, adminPassword, ...rest } = await req.json();
-    const updateData = {
-      ...rest,
-      ...(adminPassword ? { adminPasswordHash: hashPassword(adminPassword) } : {}),
-    };
+    const { id, name, adminPassword, sessionMaxAgeDays, isActive } = await req.json();
+    if (!id) {
+      return NextResponse.json({ error: "id required" }, { status: 400 });
+    }
+    const updateData: Record<string, unknown> = {};
+    if (name !== undefined) updateData.name = name;
+    if (isActive !== undefined) updateData.isActive = isActive;
+    if (adminPassword) updateData.adminPasswordHash = hashPassword(adminPassword);
+    if (typeof sessionMaxAgeDays === "number" && sessionMaxAgeDays > 0) {
+      updateData.sessionMaxAgeDays = Math.floor(sessionMaxAgeDays);
+    }
+
     const [updated] = await db.update(tenants).set(updateData).where(eq(tenants.id, id)).returning();
     return NextResponse.json(updated);
   } catch (e) {

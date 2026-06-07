@@ -9,17 +9,18 @@ type Tenant = {
   name: string;
   tenantToken: string;
   isActive: boolean;
+  sessionMaxAgeDays: number;
   createdAt: string;
 };
 
-type EditForm = { name: string; adminPassword: string };
+type EditForm = { name: string; adminPassword: string; sessionMaxAgeDays: number };
 
 export default function SuperAdminPage() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({ name: "", adminPassword: "" });
+  const [form, setForm] = useState({ name: "", adminPassword: "", sessionMaxAgeDays: 30 });
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState<EditForm>({ name: "", adminPassword: "" });
+  const [editForm, setEditForm] = useState<EditForm>({ name: "", adminPassword: "", sessionMaxAgeDays: 30 });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -49,7 +50,7 @@ export default function SuperAdminPage() {
         body: JSON.stringify(form),
       });
       if (res.ok) {
-        setForm({ name: "", adminPassword: "" });
+        setForm({ name: "", adminPassword: "", sessionMaxAgeDays: 30 });
         load();
       } else {
         const data = await res.json().catch(() => ({}));
@@ -64,12 +65,16 @@ export default function SuperAdminPage() {
 
   const handleEdit = (t: Tenant) => {
     setEditingId(t.id);
-    setEditForm({ name: t.name, adminPassword: "" });
+    setEditForm({ name: t.name, adminPassword: "", sessionMaxAgeDays: t.sessionMaxAgeDays ?? 30 });
   };
 
   const handleUpdate = async () => {
     if (!editingId) return;
-    const body: Record<string, string> = { id: editingId, name: editForm.name };
+    const body: Record<string, unknown> = {
+      id: editingId,
+      name: editForm.name,
+      sessionMaxAgeDays: editForm.sessionMaxAgeDays,
+    };
     if (editForm.adminPassword) body.adminPassword = editForm.adminPassword;
     await fetch("/api/super-admin/tenants", {
       method: "PUT",
@@ -153,6 +158,23 @@ export default function SuperAdminPage() {
                 className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-1">
+                セッション保持日数
+              </label>
+              <p className="text-xs text-gray-500 mb-1.5">参加者がブラウザを閉じても記録が維持される日数（スタンプラリーの開催期間に合わせて設定）</p>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={1}
+                  max={365}
+                  value={form.sessionMaxAgeDays}
+                  onChange={(e) => setForm({ ...form, sessionMaxAgeDays: parseInt(e.target.value) || 30 })}
+                  className="w-24 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+                <span className="text-sm text-gray-400">日間</span>
+              </div>
+            </div>
             {error && <p className="text-red-400 text-sm">{error}</p>}
             <button
               type="submit"
@@ -200,6 +222,21 @@ export default function SuperAdminPage() {
                         className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
                       />
                     </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-400 mb-1">セッション保持日数</label>
+                      <p className="text-xs text-gray-500 mb-1">参加者のスタンプ記録が同じブラウザで維持される日数</p>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min={1}
+                          max={365}
+                          value={editForm.sessionMaxAgeDays}
+                          onChange={(e) => setEditForm({ ...editForm, sessionMaxAgeDays: parseInt(e.target.value) || 30 })}
+                          className="w-24 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        />
+                        <span className="text-xs text-gray-400">日間</span>
+                      </div>
+                    </div>
                     <div className="flex gap-2">
                       <button onClick={handleUpdate}
                         className="flex-1 bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg text-sm">
@@ -223,6 +260,7 @@ export default function SuperAdminPage() {
                         </div>
                         <p className="text-xs text-gray-500 mt-1">
                           作成日: {new Date(t.createdAt).toLocaleDateString("ja-JP")}
+                          　セッション: {t.sessionMaxAgeDays ?? 30}日間
                         </p>
                       </div>
                       <button onClick={() => handleEdit(t)}

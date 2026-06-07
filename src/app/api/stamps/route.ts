@@ -41,11 +41,12 @@ export async function POST(req: NextRequest) {
       tenantId: tenant.id,
     });
 
+    const maxAgeSec = tenant.sessionMaxAgeDays * 24 * 60 * 60;
     const response = NextResponse.json({ success: true, spotName: spot.name });
     if (!existingSession) {
       response.cookies.set(SESSION_COOKIE, sessionToken, {
         httpOnly: true,
-        maxAge: 60 * 60 * 24 * 30,
+        maxAge: maxAgeSec,
         path: "/",
       });
     }

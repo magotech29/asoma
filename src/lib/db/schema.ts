@@ -23,6 +23,7 @@ export const tenants = pgTable("tenants", {
   logoUrl: text("logo_url"),
   primaryColor: text("primary_color").default("#10b981"),
   isActive: boolean("is_active").notNull().default(true),
+  sessionMaxAgeDays: integer("session_max_age_days").notNull().default(30),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
