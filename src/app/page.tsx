@@ -25,7 +25,6 @@ function HomeContent() {
 
   useEffect(() => {
     const token = searchParams.get("t");
-
     const savedToken = localStorage.getItem("stamp_tenant_token");
     const effectiveToken = token ?? savedToken;
 
@@ -126,9 +125,9 @@ function HomeContent() {
             >
               🔄 再接続する
             </button>
-            <p className="text-xs text-gray-400">
-              うまくいかない場合は、主催者から受け取ったURLを再度開いてください。
-            </p>
+            <Link href="/faq#セッションが期限切れです" className="text-sm text-emerald-600 underline">
+              うまくいかない場合はFAQを確認する
+            </Link>
           </div>
         </main>
       </div>
@@ -142,9 +141,12 @@ function HomeContent() {
           <h1 className="text-xl font-bold">🗺️ ぐるっとスタンプラリー</h1>
         </header>
         <main className="flex-1 flex items-center justify-center px-4">
-          <div className="text-center">
+          <div className="text-center max-w-sm">
             <p className="text-6xl mb-4">🔗</p>
-            <p className="text-gray-600">{error}</p>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <Link href="/faq" className="text-sm text-emerald-600 underline">
+              お困りの場合はFAQを確認する
+            </Link>
           </div>
         </main>
       </div>
@@ -213,8 +215,9 @@ function HomeContent() {
       </main>
 
       <footer className="text-center text-xs text-gray-400 py-4 space-y-1">
-        <div>
+        <div className="flex justify-center gap-4">
           <Link href="/guide" className="text-emerald-600 hover:underline text-sm">📖 使い方ガイド</Link>
+          <Link href="/faq" className="text-emerald-600 hover:underline text-sm">❓ よくある質問</Link>
         </div>
         <div>© スタンプラリー実行委員会</div>
       </footer>

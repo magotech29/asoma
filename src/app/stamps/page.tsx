@@ -51,9 +51,12 @@ export default function StampsPage() {
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <p className="text-red-400 mb-4">読み込みに失敗しました</p>
-            <button onClick={() => window.location.reload()} className="text-emerald-600 underline">
+            <button onClick={() => window.location.reload()} className="text-emerald-600 underline block mx-auto mb-3">
               再読み込み
             </button>
+            <Link href="/faq" className="text-sm text-gray-400 underline">
+              お困りの場合はFAQを確認する
+            </Link>
           </div>
         </main>
       </div>
@@ -149,10 +152,17 @@ export default function StampsPage() {
           );
         })}
 
-        <Link href="/scan" className="block w-full bg-emerald-500 text-white text-center font-bold py-4 rounded-2xl shadow">
+        <Link href="/scan" className="block w-full bg-emerald-500 text-white text-center font-bold py-4 rounded-2xl shadow mb-6">
           📷 QRコードをスキャン
         </Link>
       </main>
+
+      <footer className="text-center text-xs text-gray-400 py-4 space-y-1">
+        <div className="flex justify-center gap-4">
+          <Link href="/guide" className="text-emerald-600 hover:underline text-sm">📖 使い方ガイド</Link>
+          <Link href="/faq" className="text-emerald-600 hover:underline text-sm">❓ よくある質問</Link>
+        </div>
+      </footer>
     </div>
   );
 }
