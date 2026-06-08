@@ -357,20 +357,13 @@ export default function AdminSpotsPage() {
         {/* スポット一覧（コース別グループ） */}
         {loading ? (
           <p className="text-gray-400 text-center py-8">読み込み中...</p>
-        ) : totalSpots === 0 ? (
+        ) : courses.length === 0 ? (
           <div className="bg-white rounded-xl border border-dashed border-gray-200 p-8 text-center">
-            <p className="text-gray-400 text-sm mb-3">スポットがまだありません</p>
-            {mode === "hidden" && (
-              <button onClick={() => openAdd()}
-                className="bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold px-4 py-2 rounded-lg">
-                ＋ 最初のスポットを追加
-              </button>
-            )}
+            <p className="text-gray-400 text-sm mb-3">コースがまだありません。先にコースを追加してください。</p>
           </div>
         ) : (
           <div className="space-y-6">
             {spotsByCourse.map(({ course, spots: courseSpots }) => (
-              courseSpots.length === 0 ? null : (
                 <section key={course.id}>
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
@@ -421,7 +414,6 @@ export default function AdminSpotsPage() {
                     ))}
                   </ul>
                 </section>
-              )
             ))}
           </div>
         )}
