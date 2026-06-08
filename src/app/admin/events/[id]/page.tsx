@@ -49,16 +49,16 @@ function DateTimePicker({ value, onChange, label }: {
       <div className="flex gap-1 items-center flex-wrap">
         <input type="date" value={d}
           onChange={(e) => { setD(e.target.value); notify(e.target.value, h, mm); }}
-          className="flex-1 border border-gray-200 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 min-w-0"
+          className="flex-1 border border-gray-200 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 min-w-0 bg-white"
         />
         <select value={h} onChange={(e) => { setH(e.target.value); notify(d, e.target.value, mm); }}
-          className="border border-gray-200 rounded-lg px-1 py-2 text-sm">
+          className="border border-gray-200 rounded-lg px-1 py-2 text-sm bg-white">
           <option value="">時</option>
           {HOURS.map((hh) => <option key={hh} value={hh}>{hh}</option>)}
         </select>
         <span className="text-gray-400 text-sm font-bold">:</span>
         <select value={mm} onChange={(e) => { setMm(e.target.value); notify(d, h, e.target.value); }}
-          className="border border-gray-200 rounded-lg px-1 py-2 text-sm">
+          className="border border-gray-200 rounded-lg px-1 py-2 text-sm bg-white">
           <option value="">分</option>
           {MINUTES.map((m) => <option key={m} value={m}>{m}</option>)}
         </select>
@@ -78,6 +78,8 @@ type Course = {
   sortOrder: number; eventId: string | null; spots: Spot[];
 };
 
+const EMPTY_COURSE_FORM = { name: "", description: "", distanceKm: "", durationMin: "" };
+
 export default function EventDetailPage() {
   const params = useParams();
   const eventId = params.id as string;
@@ -92,18 +94,24 @@ export default function EventDetailPage() {
   const [editingEvent, setEditingEvent] = useState(false);
   const [eventForm, setEventForm] = useState({ name: "", description: "", startsAt: "", endsAt: "" });
   const [savingEvent, setSavingEvent] = useState(false);
-  const [eventSaveResult, setEventSaveResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const eventFormRef = useRef<HTMLDivElement>(null);
 
-  const [courseForm, setCourseForm] = useState({ name: "", description: "", distanceKm: "", durationMin: "" });
+  const [courseMode, setCourseMode] = useState<"hidden" | "add" | "edit">("hidden");
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
+  const [courseForm, setCourseForm] = useState(EMPTY_COURSE_FORM);
   const [savingCourse, setSavingCourse] = useState(false);
-  const [courseSaveResult, setCourseSaveResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const courseFormRef = useRef<HTMLDivElement>(null);
+
+  const [toast, setToast] = useState<{ ok: boolean; msg: string } | null>(null);
 
   const [copySourceId, setCopySourceId] = useState("");
   const [copying, setCopying] = useState(false);
   const [copyResult, setCopyResult] = useState<string | null>(null);
+
+  const showToast = (ok: boolean, msg: string) => {
+    setToast({ ok, msg });
+    setTimeout(() => setToast(null), 2500);
+  };
 
   const load = async () => {
     try {
@@ -145,7 +153,6 @@ export default function EventDetailPage() {
   const handleSaveEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     setSavingEvent(true);
-    setEventSaveResult(null);
     try {
       const res = await fetch("/api/admin/events", {
         method: "PUT",
@@ -159,14 +166,14 @@ export default function EventDetailPage() {
         }),
       });
       if (res.ok) {
-        setEventSaveResult({ ok: true, msg: "更新しました" });
+        showToast(true, "イベント情報を更新しました");
         setEditingEvent(false);
         await load();
       } else {
-        setEventSaveResult({ ok: false, msg: "保存に失敗しました" });
+        showToast(false, "保存に失敗しました");
       }
     } catch {
-      setEventSaveResult({ ok: false, msg: "通信エラー" });
+      showToast(false, "通信エラー");
     } finally {
       setSavingEvent(false);
     }
@@ -182,10 +189,34 @@ export default function EventDetailPage() {
     load();
   };
 
+  const openAddCourse = () => {
+    setEditingCourse(null);
+    setCourseForm(EMPTY_COURSE_FORM);
+    setCourseMode("add");
+    setTimeout(() => courseFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  };
+
+  const openEditCourse = (c: Course) => {
+    setEditingCourse(c);
+    setCourseForm({
+      name: c.name,
+      description: c.description ?? "",
+      distanceKm: c.distanceKm?.toString() ?? "",
+      durationMin: c.durationMin?.toString() ?? "",
+    });
+    setCourseMode("edit");
+    setTimeout(() => courseFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  };
+
+  const closeCourseForm = () => {
+    setCourseMode("hidden");
+    setEditingCourse(null);
+    setCourseForm(EMPTY_COURSE_FORM);
+  };
+
   const handleSaveCourse = async (e: React.FormEvent) => {
     e.preventDefault();
     setSavingCourse(true);
-    setCourseSaveResult(null);
     try {
       const body = {
         ...(editingCourse ? { id: editingCourse.id } : {}),
@@ -201,30 +232,17 @@ export default function EventDetailPage() {
         body: JSON.stringify(body),
       });
       if (res.ok) {
-        setCourseSaveResult({ ok: true, msg: editingCourse ? "コースを更新しました" : "コースを追加しました" });
-        setCourseForm({ name: "", description: "", distanceKm: "", durationMin: "" });
-        setEditingCourse(null);
+        showToast(true, editingCourse ? "コースを更新しました" : "コースを追加しました");
+        closeCourseForm();
         await load();
       } else {
-        setCourseSaveResult({ ok: false, msg: "保存に失敗しました" });
+        showToast(false, "保存に失敗しました");
       }
     } catch {
-      setCourseSaveResult({ ok: false, msg: "通信エラー" });
+      showToast(false, "通信エラー");
     } finally {
       setSavingCourse(false);
     }
-  };
-
-  const handleEditCourse = (c: Course) => {
-    setEditingCourse(c);
-    setCourseForm({
-      name: c.name,
-      description: c.description ?? "",
-      distanceKm: c.distanceKm?.toString() ?? "",
-      durationMin: c.durationMin?.toString() ?? "",
-    });
-    setCourseSaveResult(null);
-    setTimeout(() => courseFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   };
 
   const handleDeleteCourse = async (id: string) => {
@@ -264,11 +282,7 @@ export default function EventDetailPage() {
         await fetch("/api/admin/spots", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            courseId: newCourse.id,
-            name: sp.name,
-            sortOrder: sp.sortOrder,
-          }),
+          body: JSON.stringify({ courseId: newCourse.id, name: sp.name, sortOrder: sp.sortOrder }),
         });
       }
 
@@ -304,10 +318,18 @@ export default function EventDetailPage() {
         </div>
       </header>
 
-      <main className="flex-1 px-4 py-6 max-w-lg mx-auto w-full space-y-6">
+      <main className="flex-1 px-4 py-6 max-w-lg mx-auto w-full space-y-5">
+
+        {/* トースト */}
+        {toast && (
+          <div className={`rounded-xl px-4 py-3 text-sm font-semibold text-center ${toast.ok ? "bg-emerald-50 border border-emerald-200 text-emerald-700" : "bg-red-50 border border-red-200 text-red-600"}`}>
+            {toast.ok ? "✓ " : "✗ "}{toast.msg}
+          </div>
+        )}
 
         {/* イベント情報カード */}
-        <div ref={eventFormRef} className={`rounded-xl border shadow-sm p-4 transition-all ${editingEvent ? "bg-amber-50 border-amber-400 ring-2 ring-amber-300" : "bg-white border-gray-100"}`}>
+        <div ref={eventFormRef}
+          className={`rounded-xl border shadow-sm p-4 transition-all ${editingEvent ? "bg-amber-50 border-amber-400 ring-2 ring-amber-300" : "bg-white border-gray-100"}`}>
           {editingEvent ? (
             <>
               <div className="flex items-center gap-2 mb-3 bg-amber-100 border border-amber-300 rounded-lg px-3 py-2">
@@ -316,11 +338,11 @@ export default function EventDetailPage() {
               <form onSubmit={handleSaveEvent} className="space-y-3">
                 <input required value={eventForm.name}
                   onChange={(e) => setEventForm({ ...eventForm, name: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
                 />
                 <input placeholder="説明（任意）" value={eventForm.description}
                   onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
                 />
                 <div className="flex gap-3">
                   <DateTimePicker label="開始日時" value={eventForm.startsAt} onChange={(v) => setEventForm({ ...eventForm, startsAt: v })} />
@@ -331,16 +353,11 @@ export default function EventDetailPage() {
                     className="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-2 rounded-lg text-sm font-semibold disabled:opacity-50">
                     {savingEvent ? "保存中..." : "✏️ 更新する"}
                   </button>
-                  <button type="button" onClick={() => { setEditingEvent(false); setEventSaveResult(null); }}
+                  <button type="button" onClick={() => setEditingEvent(false)}
                     className="px-4 bg-gray-100 text-gray-600 py-2 rounded-lg text-sm hover:bg-gray-200">
                     キャンセル
                   </button>
                 </div>
-                {eventSaveResult && (
-                  <p className={`text-sm text-center font-semibold ${eventSaveResult.ok ? "text-emerald-600" : "text-red-500"}`}>
-                    {eventSaveResult.msg}
-                  </p>
-                )}
               </form>
             </>
           ) : (
@@ -360,7 +377,11 @@ export default function EventDetailPage() {
                 </div>
               </div>
               <div className="flex gap-2 mt-3">
-                <button onClick={() => { setEditingEvent(true); setTimeout(() => eventFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }}
+                <button
+                  onClick={() => {
+                    setEditingEvent(true);
+                    setTimeout(() => eventFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+                  }}
                   className="text-xs border border-gray-200 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-50">
                   ✏️ 編集
                 </button>
@@ -369,27 +390,93 @@ export default function EventDetailPage() {
                   {event.isActive ? "停止する" : "開始する"}
                 </button>
               </div>
-              {eventSaveResult?.ok && (
-                <p className="text-xs text-emerald-600 mt-2">{eventSaveResult.msg}</p>
-              )}
             </>
           )}
         </div>
 
         {/* ── コース管理 ── */}
         <div>
-          <p className="text-xs text-gray-500 font-semibold px-1 mb-2">
-            📍 コース一覧 — このイベントのルート
-          </p>
+          {/* コースセクションヘッダー */}
+          <div className="flex items-center justify-between px-1 mb-2">
+            <p className="text-xs text-gray-500 font-semibold">
+              📍 コース一覧 — このイベントのルート（{courses.length}件）
+            </p>
+            {courseMode === "hidden" && (
+              <button onClick={openAddCourse}
+                className="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg">
+                ＋ コースを追加
+              </button>
+            )}
+          </div>
 
+          {/* コース追加・編集フォーム（accordion） */}
+          {courseMode !== "hidden" && (
+            <div
+              ref={courseFormRef}
+              className={`rounded-xl border shadow-sm p-4 mb-3 transition-all ${
+                courseMode === "edit"
+                  ? "bg-amber-50 border-amber-400 ring-2 ring-amber-300"
+                  : "bg-emerald-50 border-emerald-300 ring-2 ring-emerald-200"
+              }`}
+            >
+              {courseMode === "edit" && editingCourse && (
+                <div className="flex items-center gap-2 mb-3 bg-amber-100 border border-amber-300 rounded-lg px-3 py-2">
+                  <span className="text-amber-600 font-bold text-sm">✏️ 編集中：</span>
+                  <span className="text-amber-800 text-sm font-semibold truncate">{editingCourse.name}</span>
+                </div>
+              )}
+              <h2 className="font-bold text-gray-700 mb-3">
+                {courseMode === "edit" ? "コースを編集" : "＋ コースを追加"}
+              </h2>
+              <form onSubmit={handleSaveCourse} className="space-y-3">
+                <input required placeholder="コース名（例：Aコース・北エリア）" value={courseForm.name}
+                  onChange={(e) => setCourseForm({ ...courseForm, name: e.target.value })}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white"
+                />
+                <input placeholder="説明（任意）" value={courseForm.description}
+                  onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white"
+                />
+                <div className="flex gap-2">
+                  <input type="number" step="0.1" placeholder="距離(km)" value={courseForm.distanceKm}
+                    onChange={(e) => setCourseForm({ ...courseForm, distanceKm: e.target.value })}
+                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white"
+                  />
+                  <input type="number" placeholder="所要時間(分)" value={courseForm.durationMin}
+                    onChange={(e) => setCourseForm({ ...courseForm, durationMin: e.target.value })}
+                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button type="submit" disabled={savingCourse}
+                    className={`flex-1 text-white py-2 rounded-lg font-semibold text-sm disabled:opacity-50 ${courseMode === "edit" ? "bg-amber-500 hover:bg-amber-600" : "bg-emerald-500 hover:bg-emerald-600"}`}>
+                    {savingCourse ? "保存中..." : courseMode === "edit" ? "✏️ 更新する" : "追加する"}
+                  </button>
+                  <button type="button" onClick={closeCourseForm}
+                    className="px-4 bg-gray-100 text-gray-600 py-2 rounded-lg text-sm hover:bg-gray-200">
+                    キャンセル
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* コース一覧 */}
           {courses.length === 0 ? (
-            <div className="bg-gray-50 border border-dashed border-gray-200 rounded-xl p-4 text-center text-sm text-gray-400">
-              コースがまだありません。下から追加してください。
+            <div className="bg-white border border-dashed border-gray-200 rounded-xl p-6 text-center">
+              <p className="text-sm text-gray-400 mb-3">コースがまだありません</p>
+              {courseMode === "hidden" && (
+                <button onClick={openAddCourse}
+                  className="bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold px-4 py-2 rounded-lg">
+                  ＋ 最初のコースを追加
+                </button>
+              )}
             </div>
           ) : (
             <div className="space-y-3">
               {courses.map((c) => (
-                <div key={c.id} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                <div key={c.id}
+                  className={`bg-white rounded-xl border shadow-sm overflow-hidden transition ${courseMode === "edit" && editingCourse?.id === c.id ? "border-amber-300 ring-1 ring-amber-200" : "border-gray-100"}`}>
                   <div className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
@@ -402,12 +489,11 @@ export default function EventDetailPage() {
                         </div>
                       </div>
                       <div className="flex gap-2 ml-2">
-                        <button onClick={() => handleEditCourse(c)} className="text-xs text-blue-500 hover:underline">編集</button>
+                        <button onClick={() => openEditCourse(c)} className="text-xs text-blue-500 hover:underline">編集</button>
                         <button onClick={() => handleDeleteCourse(c.id)} className="text-xs text-red-400 hover:underline">削除</button>
                       </div>
                     </div>
 
-                    {/* スポット一覧 */}
                     {c.spots.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-1">
                         {c.spots.map((s, i) => (
@@ -419,10 +505,8 @@ export default function EventDetailPage() {
                     )}
                   </div>
                   <div className="border-t border-gray-50 px-4 py-2 bg-gray-50">
-                    <Link
-                      href={`/admin/spots?courseId=${c.id}`}
-                      className="text-xs text-emerald-600 font-semibold hover:underline"
-                    >
+                    <Link href={`/admin/spots?courseId=${c.id}`}
+                      className="text-xs text-emerald-600 font-semibold hover:underline">
                       📍 スポットを管理 →
                     </Link>
                   </div>
@@ -430,60 +514,6 @@ export default function EventDetailPage() {
               ))}
             </div>
           )}
-        </div>
-
-        {/* コース追加・編集フォーム */}
-        <div
-          ref={courseFormRef}
-          className={`rounded-xl border shadow-sm p-4 transition-all ${
-            editingCourse ? "bg-amber-50 border-amber-400 ring-2 ring-amber-300" : "bg-white border-gray-100"
-          }`}
-        >
-          {editingCourse && (
-            <div className="flex items-center gap-2 mb-3 bg-amber-100 border border-amber-300 rounded-lg px-3 py-2">
-              <span className="text-amber-600 font-bold text-sm">✏️ 編集モード：</span>
-              <span className="text-amber-800 text-sm font-semibold truncate">{editingCourse.name}</span>
-            </div>
-          )}
-          <h2 className="font-bold text-gray-700 mb-3">{editingCourse ? "コースを編集" : "＋ コースを追加"}</h2>
-          <form onSubmit={handleSaveCourse} className="space-y-3">
-            <input required placeholder="コース名（例：Aコース・北エリア）" value={courseForm.name}
-              onChange={(e) => setCourseForm({ ...courseForm, name: e.target.value })}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
-            />
-            <input placeholder="説明（任意）" value={courseForm.description}
-              onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
-            />
-            <div className="flex gap-2">
-              <input type="number" step="0.1" placeholder="距離(km)" value={courseForm.distanceKm}
-                onChange={(e) => setCourseForm({ ...courseForm, distanceKm: e.target.value })}
-                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
-              />
-              <input type="number" placeholder="所要時間(分)" value={courseForm.durationMin}
-                onChange={(e) => setCourseForm({ ...courseForm, durationMin: e.target.value })}
-                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
-              />
-            </div>
-            <div className="flex gap-2">
-              <button type="submit" disabled={savingCourse}
-                className={`flex-1 text-white py-2 rounded-lg font-semibold text-sm disabled:opacity-50 ${editingCourse ? "bg-amber-500 hover:bg-amber-600" : "bg-emerald-500 hover:bg-emerald-600"}`}>
-                {savingCourse ? "保存中..." : editingCourse ? "✏️ 更新する" : "追加"}
-              </button>
-              {editingCourse && (
-                <button type="button"
-                  onClick={() => { setEditingCourse(null); setCourseForm({ name: "", description: "", distanceKm: "", durationMin: "" }); setCourseSaveResult(null); }}
-                  className="px-4 bg-gray-100 text-gray-600 py-2 rounded-lg text-sm hover:bg-gray-200">
-                  キャンセル
-                </button>
-              )}
-            </div>
-            {courseSaveResult && (
-              <div className={`rounded-lg px-3 py-2 text-sm font-semibold text-center ${courseSaveResult.ok ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"}`}>
-                {courseSaveResult.ok ? "✓ " : "✗ "}{courseSaveResult.msg}
-              </div>
-            )}
-          </form>
         </div>
 
         {/* 他イベントのコースをコピー */}

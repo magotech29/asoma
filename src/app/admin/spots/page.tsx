@@ -21,60 +21,90 @@ type Spot = {
 
 const EMPTY_FORM = { courseId: "", name: "", description: "", address: "", lat: "", lng: "", instagramUrl: "", websiteUrl: "" };
 
-function parseCoords(input: string): { lat: number; lng: number } | null {
-  const parts = input.trim().split(/[,\s]+/).filter(Boolean);
-  if (parts.length < 2) return null;
-  const lat = parseFloat(parts[0]);
-  const lng = parseFloat(parts[1]);
-  if (isNaN(lat) || isNaN(lng)) return null;
-  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
-  return { lat, lng };
-}
-
 export default function AdminSpotsPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [spots, setSpots] = useState<Spot[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mode, setMode] = useState<"hidden" | "add" | "edit">("hidden");
+  const [editingSpot, setEditingSpot] = useState<Spot | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
-  const [editing, setEditing] = useState<Spot | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [plusCode, setPlusCode] = useState("");
   const [plusCodeError, setPlusCodeError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ ok: boolean; msg: string } | null>(null);
   const [backEventId, setBackEventId] = useState<string | null>(null);
+  const [preselectedCourseId, setPreselectedCourseId] = useState<string | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const showToast = (ok: boolean, msg: string) => {
+    setToast({ ok, msg });
+    setTimeout(() => setToast(null), 2500);
+  };
+
   const load = () => {
-    const preselectedCourseId = searchParams.get("courseId");
     Promise.all([
       fetch("/api/admin/courses").then((r) => r.status === 401 ? null : r.json()),
       fetch("/api/admin/spots").then((r) => r.status === 401 ? null : r.json()),
     ]).then(([c, s]) => {
       if (!c) { router.replace("/admin/login"); return; }
-      setCourses(c ?? []);
+      const cList: Course[] = c ?? [];
+      setCourses(cList);
       setSpots(s ?? []);
-      if (preselectedCourseId) {
-        setForm((f) => ({ ...f, courseId: preselectedCourseId }));
-      } else if (c.length > 0 && !form.courseId) {
-        setForm((f) => ({ ...f, courseId: c[0].id }));
-      }
       setLoading(false);
     });
   };
 
   useEffect(() => {
-    const courseId = searchParams.get("courseId");
-    if (courseId) {
-      fetch(`/api/admin/courses`)
+    const courseIdParam = searchParams.get("courseId");
+    setPreselectedCourseId(courseIdParam);
+    if (courseIdParam) {
+      fetch("/api/admin/courses")
         .then((r) => r.ok ? r.json() : [])
         .then((crs: { id: string; eventId: string | null }[]) => {
-          const course = crs.find((c) => c.id === courseId);
+          const course = crs.find((c) => c.id === courseIdParam);
           if (course?.eventId) setBackEventId(course.eventId);
         });
     }
     load();
   }, []);
+
+  const openAdd = (defaultCourseId?: string) => {
+    setEditingSpot(null);
+    const courseId = defaultCourseId ?? preselectedCourseId ?? courses[0]?.id ?? "";
+    setForm({ ...EMPTY_FORM, courseId });
+    setPlusCode("");
+    setPlusCodeError(null);
+    setMode("add");
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  };
+
+  const openEdit = (s: Spot) => {
+    setEditingSpot(s);
+    setForm({
+      courseId: s.courseId,
+      name: s.name,
+      description: s.description ?? "",
+      address: s.address ?? "",
+      lat: s.lat ?? "",
+      lng: s.lng ?? "",
+      instagramUrl: s.instagramUrl ?? "",
+      websiteUrl: s.websiteUrl ?? "",
+    });
+    setPlusCode("");
+    setPlusCodeError(null);
+    setMode("edit");
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  };
+
+  const closeForm = () => {
+    setMode("hidden");
+    setEditingSpot(null);
+    setForm(EMPTY_FORM);
+    setPlusCode("");
+    setPlusCodeError(null);
+  };
 
   const handlePlusCode = () => {
     setPlusCodeError(null);
@@ -89,7 +119,6 @@ export default function AdminSpotsPage() {
       setPlusCodeError("座標を認識できませんでした。「35.6813, 139.7660」の形式で入力してください。");
       return;
     }
-    // 元の文字列をそのまま使い、桁数を落とさない
     setForm((f) => ({ ...f, lat: parts[0].trim(), lng: parts[1].trim() }));
     setPlusCode("");
   };
@@ -98,7 +127,7 @@ export default function AdminSpotsPage() {
     e.preventDefault();
     setSubmitting(true);
     const body = {
-      ...(editing ? { id: editing.id } : {}),
+      ...(editingSpot ? { id: editingSpot.id } : {}),
       courseId: form.courseId,
       name: form.name,
       description: form.description || null,
@@ -108,38 +137,19 @@ export default function AdminSpotsPage() {
       instagramUrl: form.instagramUrl || null,
       websiteUrl: form.websiteUrl || null,
     };
-    await fetch("/api/admin/spots", {
-      method: editing ? "PUT" : "POST",
+    const res = await fetch("/api/admin/spots", {
+      method: editingSpot ? "PUT" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    setForm({ ...EMPTY_FORM, courseId: courses[0]?.id ?? "" });
-    setEditing(null);
     setSubmitting(false);
-    setPlusCode("");
-    load();
-  };
-
-  const handleEdit = (s: Spot) => {
-    setEditing(s);
-    setForm({
-      courseId: s.courseId,
-      name: s.name,
-      description: s.description ?? "",
-      address: s.address ?? "",
-      lat: s.lat ?? "",
-      lng: s.lng ?? "",
-      instagramUrl: s.instagramUrl ?? "",
-      websiteUrl: s.websiteUrl ?? "",
-    });
-    setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
-  };
-
-  const handleCancel = () => {
-    setEditing(null);
-    setForm({ ...EMPTY_FORM, courseId: courses[0]?.id ?? "" });
-    setPlusCode("");
-    setPlusCodeError(null);
+    if (res.ok) {
+      showToast(true, editingSpot ? "スポットを更新しました" : "スポットを追加しました");
+      closeForm();
+      load();
+    } else {
+      showToast(false, "保存に失敗しました");
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -152,11 +162,12 @@ export default function AdminSpotsPage() {
     load();
   };
 
-  // コース別にスポットをグルーピング
   const spotsByCourse = courses.map((c) => ({
     course: c,
     spots: spots.filter((s) => s.courseId === c.id),
   }));
+
+  const totalSpots = spots.length;
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -178,171 +189,211 @@ export default function AdminSpotsPage() {
 
       <main className="flex-1 px-4 py-6 max-w-lg mx-auto w-full">
 
-        {/* フォーム */}
-        <div
-          ref={formRef}
-          className={`rounded-xl border shadow-sm p-4 mb-6 transition-all ${
-            editing
-              ? "bg-amber-50 border-amber-400 ring-2 ring-amber-300"
-              : "bg-white border-gray-100"
-          }`}
-        >
-          {editing && (
-            <div className="flex items-center gap-2 mb-3 bg-amber-100 border border-amber-300 rounded-lg px-3 py-2">
-              <span className="text-amber-600 font-bold text-sm">✏️ 編集モード：</span>
-              <span className="text-amber-800 text-sm font-semibold truncate">{editing.name}</span>
-            </div>
-          )}
-          <h2 className="font-bold text-gray-700 mb-3">
-            {editing ? "スポットを編集" : "スポットを追加"}
-          </h2>
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <select
-              required
-              value={form.courseId}
-              onChange={(e) => setForm({ ...form, courseId: e.target.value })}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+        {/* トースト */}
+        {toast && (
+          <div className={`rounded-xl px-4 py-3 mb-4 text-sm font-semibold text-center ${toast.ok ? "bg-emerald-50 border border-emerald-200 text-emerald-700" : "bg-red-50 border border-red-200 text-red-600"}`}>
+            {toast.ok ? "✓ " : "✗ "}{toast.msg}
+          </div>
+        )}
+
+        {/* 一覧ヘッダー + 追加ボタン */}
+        <div className="flex items-center justify-between mb-3 px-1">
+          <p className="text-xs text-gray-500 font-semibold">
+            {loading ? "読み込み中..." : `スポット一覧（全${totalSpots}件）`}
+          </p>
+          {mode === "hidden" && (
+            <button
+              onClick={() => openAdd()}
+              className="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1"
             >
-              <option value="">コースを選択</option>
-              {courses.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-            <input
-              required
-              placeholder="スポット名"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
-            />
-            <input
-              placeholder="説明（任意）"
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
-            />
-            <input
-              placeholder="住所（任意）"
-              value={form.address}
-              onChange={(e) => setForm({ ...form, address: e.target.value })}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
-            />
+              ＋ スポットを追加
+            </button>
+          )}
+        </div>
 
-            {/* 座標入力 */}
-            <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-3">
-              <p className="text-xs font-semibold text-emerald-700 mb-1.5">📍 Google マップから座標を入力</p>
-              <div className="text-xs text-gray-500 mb-2 space-y-1">
-                <p><span className="font-semibold">PC:</span> 右クリック → 数字（例: 35.6813, 139.7660）をクリックでコピー</p>
-                <p><span className="font-semibold">スマホ:</span> 長押し → 上部の数字をタップしてコピー</p>
+        {/* 追加・編集フォーム（accordion） */}
+        {mode !== "hidden" && (
+          <div
+            ref={formRef}
+            className={`rounded-xl border shadow-sm p-4 mb-5 transition-all ${
+              mode === "edit"
+                ? "bg-amber-50 border-amber-400 ring-2 ring-amber-300"
+                : "bg-emerald-50 border-emerald-300 ring-2 ring-emerald-200"
+            }`}
+          >
+            {mode === "edit" && editingSpot && (
+              <div className="flex items-center gap-2 mb-3 bg-amber-100 border border-amber-300 rounded-lg px-3 py-2">
+                <span className="text-amber-600 font-bold text-sm">✏️ 編集中：</span>
+                <span className="text-amber-800 text-sm font-semibold truncate">{editingSpot.name}</span>
               </div>
-              <div className="flex gap-2">
-                <input
-                  placeholder="例）35.6813, 139.7660"
-                  value={plusCode}
-                  onChange={(e) => { setPlusCode(e.target.value); setPlusCodeError(null); }}
-                  className="flex-1 border border-emerald-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white font-mono"
-                />
-                <button
-                  type="button"
-                  onClick={handlePlusCode}
-                  className="bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-semibold whitespace-nowrap"
-                >
-                  入力
-                </button>
-              </div>
-              {plusCodeError && <p className="text-red-500 text-xs mt-1">{plusCodeError}</p>}
-            </div>
-
-            {/* 緯度経度 */}
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <label className="block text-xs text-gray-500 mb-1">緯度 (lat)</label>
-                <input
-                  type="text" inputMode="decimal" placeholder="35.681236"
-                  value={form.lat}
-                  onChange={(e) => setForm({ ...form, lat: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 font-mono"
-                />
-              </div>
-              <div className="flex-1">
-                <label className="block text-xs text-gray-500 mb-1">経度 (lng)</label>
-                <input
-                  type="text" inputMode="decimal" placeholder="139.767125"
-                  value={form.lng}
-                  onChange={(e) => setForm({ ...form, lng: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 font-mono"
-                />
-              </div>
-            </div>
-
-            {/* SNSリンク */}
-            <div className="bg-purple-50 border border-purple-100 rounded-lg p-3 space-y-2">
-              <p className="text-xs font-semibold text-purple-700 mb-1.5">📱 SNSリンク（任意）</p>
-              <div className="flex items-center gap-2">
-                <span className="text-base">📷</span>
-                <input
-                  type="url"
-                  placeholder="InstagramページURL"
-                  value={form.instagramUrl}
-                  onChange={(e) => setForm({ ...form, instagramUrl: e.target.value })}
-                  className="flex-1 border border-purple-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 bg-white"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-base">🌐</span>
-                <input
-                  type="url"
-                  placeholder="WebサイトURL（HP・Facebookなど）"
-                  value={form.websiteUrl}
-                  onChange={(e) => setForm({ ...form, websiteUrl: e.target.value })}
-                  className="flex-1 border border-purple-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 bg-white"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                type="submit"
-                disabled={submitting}
-                className={`flex-1 text-white py-2 rounded-lg font-semibold text-sm ${editing ? "bg-amber-500 hover:bg-amber-600" : "bg-emerald-500 hover:bg-emerald-600"}`}
+            )}
+            <h2 className="font-bold text-gray-700 mb-3">
+              {mode === "edit" ? "スポットを編集" : "＋ スポットを追加"}
+            </h2>
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <select
+                required
+                value={form.courseId}
+                onChange={(e) => setForm({ ...form, courseId: e.target.value })}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white"
               >
-                {editing ? "✏️ 更新する" : "追加"}
-              </button>
-              {editing && (
+                <option value="">コースを選択</option>
+                {courses.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              <input
+                required
+                placeholder="スポット名"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white"
+              />
+              <input
+                placeholder="説明（任意）"
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white"
+              />
+              <input
+                placeholder="住所（任意）"
+                value={form.address}
+                onChange={(e) => setForm({ ...form, address: e.target.value })}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white"
+              />
+
+              {/* 座標入力 */}
+              <div className="bg-white border border-emerald-100 rounded-lg p-3">
+                <p className="text-xs font-semibold text-emerald-700 mb-1.5">📍 Google マップから座標を入力</p>
+                <div className="text-xs text-gray-500 mb-2 space-y-1">
+                  <p><span className="font-semibold">PC:</span> 右クリック → 数字（例: 35.6813, 139.7660）をクリックでコピー</p>
+                  <p><span className="font-semibold">スマホ:</span> 長押し → 上部の数字をタップしてコピー</p>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    placeholder="例）35.6813, 139.7660"
+                    value={plusCode}
+                    onChange={(e) => { setPlusCode(e.target.value); setPlusCodeError(null); }}
+                    className="flex-1 border border-emerald-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={handlePlusCode}
+                    className="bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-semibold whitespace-nowrap"
+                  >
+                    入力
+                  </button>
+                </div>
+                {plusCodeError && <p className="text-red-500 text-xs mt-1">{plusCodeError}</p>}
+              </div>
+
+              {/* 緯度経度 */}
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <label className="block text-xs text-gray-500 mb-1">緯度 (lat)</label>
+                  <input
+                    type="text" inputMode="decimal" placeholder="35.681236"
+                    value={form.lat}
+                    onChange={(e) => setForm({ ...form, lat: e.target.value })}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white font-mono"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs text-gray-500 mb-1">経度 (lng)</label>
+                  <input
+                    type="text" inputMode="decimal" placeholder="139.767125"
+                    value={form.lng}
+                    onChange={(e) => setForm({ ...form, lng: e.target.value })}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* SNSリンク */}
+              <div className="bg-white border border-purple-100 rounded-lg p-3 space-y-2">
+                <p className="text-xs font-semibold text-purple-700 mb-1.5">📱 SNSリンク（任意）</p>
+                <div className="flex items-center gap-2">
+                  <span className="text-base">📷</span>
+                  <input
+                    type="url"
+                    placeholder="InstagramページURL"
+                    value={form.instagramUrl}
+                    onChange={(e) => setForm({ ...form, instagramUrl: e.target.value })}
+                    className="flex-1 border border-purple-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 bg-white"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-base">🌐</span>
+                  <input
+                    type="url"
+                    placeholder="WebサイトURL（HP・Facebookなど）"
+                    value={form.websiteUrl}
+                    onChange={(e) => setForm({ ...form, websiteUrl: e.target.value })}
+                    className="flex-1 border border-purple-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className={`flex-1 text-white py-2 rounded-lg font-semibold text-sm disabled:opacity-50 ${mode === "edit" ? "bg-amber-500 hover:bg-amber-600" : "bg-emerald-500 hover:bg-emerald-600"}`}
+                >
+                  {submitting ? "保存中..." : mode === "edit" ? "✏️ 更新する" : "追加する"}
+                </button>
                 <button
                   type="button"
-                  onClick={handleCancel}
+                  onClick={closeForm}
                   className="px-4 bg-gray-100 text-gray-600 py-2 rounded-lg text-sm hover:bg-gray-200"
                 >
                   キャンセル
                 </button>
-              )}
-            </div>
-          </form>
-        </div>
+              </div>
+            </form>
+          </div>
+        )}
 
         {/* スポット一覧（コース別グループ） */}
         {loading ? (
           <p className="text-gray-400 text-center py-8">読み込み中...</p>
-        ) : spots.length === 0 ? (
-          <p className="text-gray-400 text-center py-8">スポットがありません</p>
+        ) : totalSpots === 0 ? (
+          <div className="bg-white rounded-xl border border-dashed border-gray-200 p-8 text-center">
+            <p className="text-gray-400 text-sm mb-3">スポットがまだありません</p>
+            {mode === "hidden" && (
+              <button onClick={() => openAdd()}
+                className="bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold px-4 py-2 rounded-lg">
+                ＋ 最初のスポットを追加
+              </button>
+            )}
+          </div>
         ) : (
           <div className="space-y-6">
             {spotsByCourse.map(({ course, spots: courseSpots }) => (
               courseSpots.length === 0 ? null : (
                 <section key={course.id}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full">
-                      🗺️ {course.name}
-                    </span>
-                    <span className="text-xs text-gray-400">{courseSpots.length}件</span>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full">
+                        🗺️ {course.name}
+                      </span>
+                      <span className="text-xs text-gray-400">{courseSpots.length}件</span>
+                    </div>
+                    {mode === "hidden" && (
+                      <button
+                        onClick={() => openAdd(course.id)}
+                        className="text-xs text-emerald-600 border border-emerald-200 hover:bg-emerald-50 px-2 py-1 rounded-lg font-semibold"
+                      >
+                        ＋ 追加
+                      </button>
+                    )}
                   </div>
                   <ul className="space-y-2">
                     {courseSpots.map((s) => (
                       <li
                         key={s.id}
                         className={`bg-white rounded-xl border shadow-sm px-4 py-3 transition ${
-                          editing?.id === s.id ? "border-amber-400 ring-1 ring-amber-300" : "border-gray-100"
+                          mode === "edit" && editingSpot?.id === s.id ? "border-amber-400 ring-1 ring-amber-300" : "border-gray-100"
                         }`}
                       >
                         <div className="flex items-center justify-between">
@@ -362,7 +413,7 @@ export default function AdminSpotsPage() {
                             </div>
                           </div>
                           <div className="flex gap-3 ml-3 shrink-0">
-                            <button onClick={() => handleEdit(s)} className="text-sm text-blue-500 hover:underline">編集</button>
+                            <button onClick={() => openEdit(s)} className="text-sm text-blue-500 hover:underline">編集</button>
                             <button onClick={() => handleDelete(s.id)} className="text-sm text-red-400 hover:underline">削除</button>
                           </div>
                         </div>
