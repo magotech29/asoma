@@ -92,7 +92,14 @@ export default function AdminCoursesPage() {
     <div className="flex flex-col min-h-screen bg-gray-50">
       <header className="bg-gray-800 text-white px-4 py-4 shadow flex items-center gap-3">
         <Link href="/admin" className="text-gray-300 hover:text-white">← 戻る</Link>
-        <h1 className="text-lg font-bold">🗺️ コース管理</h1>
+        <h1 className="text-lg font-bold flex-1">🗺️ コース管理</h1>
+        <a
+          href="/api/admin/courses/export"
+          download="courses.csv"
+          className="text-xs bg-gray-600 hover:bg-gray-500 text-white px-3 py-1.5 rounded-lg font-semibold"
+        >
+          ⬇ CSV出力
+        </a>
       </header>
 
       <main className="flex-1 px-4 py-6 max-w-lg mx-auto w-full">
