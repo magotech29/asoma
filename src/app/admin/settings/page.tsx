@@ -414,6 +414,21 @@ export default function AdminSettingsPage() {
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-6">
           <h2 className="font-bold text-gray-700 mb-3">📂 データ管理</h2>
 
+          {/* 一括エクスポート（イベント選択に関係なく、テナント全体のコース＋スポットを出力） */}
+          <div className="mb-5 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+            <p className="text-xs text-gray-700 mb-1 font-semibold">⬇ コース・スポットを一括エクスポート</p>
+            <p className="text-xs text-gray-500 mb-2">
+              このテナントに登録されている<strong>全コース・全スポット</strong>をCSVで書き出します。<br />
+              ※ イベントの選択状態に関係なく、テナント全体のデータが対象です。
+            </p>
+            <button
+              onClick={() => downloadCSV("/api/admin/export/bulk", "bulk-export.csv")}
+              className="w-full border border-gray-400 text-gray-700 bg-white hover:bg-gray-100 py-2 rounded-lg text-sm font-semibold transition"
+            >
+              ⬇ CSVエクスポート（インポート用テンプレート兼用）
+            </button>
+          </div>
+
           {/* 一括インポート */}
           <div className="mb-5 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
             <p className="text-xs text-emerald-800 mb-1 font-semibold">⚡ 全部まとめてインポート（コース＋スポット）</p>
@@ -425,12 +440,6 @@ export default function AdminSettingsPage() {
               コース列: type=course, name, description, distance_km, duration_min, sort_order<br />
               スポット列: type=spot, name, description, address, lat, lng, instagram_url, website_url, sort_order, course_name
             </p>
-            <button
-              onClick={() => downloadCSV("/api/admin/export/bulk", "bulk-export.csv")}
-              className="w-full border border-emerald-400 text-emerald-700 bg-white hover:bg-emerald-50 py-2 rounded-lg text-sm font-semibold mb-2 transition"
-            >
-              ⬇ 現在のデータを一括CSVエクスポート（インポート用）
-            </button>
             <label className={`block w-full text-center border-2 border-dashed rounded-lg py-3 text-sm font-semibold cursor-pointer transition
               ${importingBulk ? "border-emerald-200 text-emerald-300" : "border-emerald-300 text-emerald-700 hover:border-emerald-500 hover:bg-emerald-100"}`}>
               {importingBulk ? "インポート中..." : "一括CSVファイルを選択"}
