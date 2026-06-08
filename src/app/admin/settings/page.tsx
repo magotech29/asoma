@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -112,6 +112,7 @@ export default function AdminSettingsPage() {
   const [copyTarget, setCopyTarget] = useState("");
   const [copying, setCopying] = useState(false);
   const [copyResult, setCopyResult] = useState<string | null>(null);
+  const formRef = useRef<HTMLDivElement>(null);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult>(null);
   const [importingCourses, setImportingCourses] = useState(false);
@@ -197,6 +198,8 @@ export default function AdminSettingsPage() {
       startsAt: utcToJSTInput(ev.startsAt),
       endsAt: utcToJSTInput(ev.endsAt),
     });
+    setSubmitResult(null);
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   };
 
   const toggleActive = async (ev: Event) => {
@@ -320,7 +323,20 @@ export default function AdminSettingsPage() {
 
       <main className="flex-1 px-4 py-6 max-w-lg mx-auto w-full">
         {/* 追加・編集フォーム */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-6">
+        <div
+          ref={formRef}
+          className={`rounded-xl border shadow-sm p-4 mb-6 transition-all ${
+            editing
+              ? "bg-amber-50 border-amber-400 ring-2 ring-amber-300"
+              : "bg-white border-gray-100"
+          }`}
+        >
+          {editing && (
+            <div className="flex items-center gap-2 mb-3 bg-amber-100 border border-amber-300 rounded-lg px-3 py-2">
+              <span className="text-amber-600 font-bold text-sm">✏️ 編集モード：</span>
+              <span className="text-amber-800 text-sm font-semibold truncate">{editing.name}</span>
+            </div>
+          )}
           <h2 className="font-bold text-gray-700 mb-3">{editing ? "イベントを編集" : "イベントを追加"}</h2>
           <form onSubmit={handleSubmit} className="space-y-3">
             <input
@@ -350,13 +366,13 @@ export default function AdminSettingsPage() {
             </div>
             <div className="flex gap-2">
               <button type="submit" disabled={submitting}
-                className="flex-1 bg-emerald-500 text-white py-2 rounded-lg font-semibold text-sm disabled:opacity-50">
-                {submitting ? "保存中..." : editing ? "更新" : "追加"}
+                className={`flex-1 text-white py-2 rounded-lg font-semibold text-sm disabled:opacity-50 ${editing ? "bg-amber-500 hover:bg-amber-600" : "bg-emerald-500 hover:bg-emerald-600"}`}>
+                {submitting ? "保存中..." : editing ? "✏️ 更新する" : "追加"}
               </button>
               {editing && (
                 <button type="button"
                   onClick={() => { setEditing(null); setForm({ name: "", description: "", startsAt: "", endsAt: "" }); setSubmitResult(null); }}
-                  className="px-4 bg-gray-100 text-gray-600 py-2 rounded-lg text-sm">
+                  className="px-4 bg-gray-100 text-gray-600 py-2 rounded-lg text-sm hover:bg-gray-200">
                   キャンセル
                 </button>
               )}
