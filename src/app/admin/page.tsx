@@ -112,6 +112,12 @@ export default function AdminDashboard() {
               <p className="font-bold text-gray-800 mt-2">統計</p>
               <p className="text-xs text-gray-400 mt-0.5">参加者・完走率・分析</p>
             </Link>
+            <Link href="/admin/participants"
+              className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 hover:shadow-md transition">
+              <span className="text-3xl">👥</span>
+              <p className="font-bold text-gray-800 mt-2">参加者</p>
+              <p className="text-xs text-gray-400 mt-0.5">参加者一覧・CSVエクスポート</p>
+            </Link>
             <Link href="/admin/applications"
               className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 hover:shadow-md transition">
               <span className="text-3xl">🎁</span>
