@@ -34,15 +34,6 @@ export default function AdminDashboard() {
     router.replace("/admin/login");
   };
 
-  const menuItems = [
-    { href: "/admin/stats", icon: "📊", label: "統計", desc: "参加者数・完走率・スポット分析" },
-    { href: "/admin/applications", icon: "🎁", label: "景品応募者", desc: "応募者一覧・当選管理" },
-    { href: "/admin/courses", icon: "🗺️", label: "コース管理", desc: "コースの追加・編集・削除" },
-    { href: "/admin/spots", icon: "📍", label: "スポット管理", desc: "チェックポイントの管理" },
-    { href: "/admin/qrcodes", icon: "🔲", label: "QRコード", desc: "QRコードの発行・印刷" },
-    { href: "/admin/settings", icon: "⚙️", label: "イベント管理", desc: "開催期間・コース構成" },
-  ];
-
   if (checking) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -74,21 +65,74 @@ export default function AdminDashboard() {
       </header>
 
       <main className="flex-1 px-4 py-6 max-w-lg mx-auto w-full">
-        <div className="grid grid-cols-2 gap-3">
-          {menuItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 hover:shadow-md transition"
-            >
-              <span className="text-3xl">{item.icon}</span>
-              <p className="font-bold text-gray-800 mt-2">{item.label}</p>
-              <p className="text-xs text-gray-400 mt-0.5">{item.desc}</p>
-            </Link>
-          ))}
+
+        {/* 階層イメージ */}
+        <div className="bg-white border border-gray-100 rounded-xl px-4 py-3 mb-5 shadow-sm">
+          <p className="text-xs text-gray-400 font-semibold mb-1">管理の構造</p>
+          <div className="flex items-center gap-2 text-sm text-gray-600 flex-wrap">
+            <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-xs font-bold">イベント</span>
+            <span className="text-gray-300">›</span>
+            <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-bold">コース</span>
+            <span className="text-gray-300">›</span>
+            <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full text-xs font-bold">スポット（QR）</span>
+          </div>
+          <p className="text-xs text-gray-400 mt-1.5">イベント管理から順番に設定します。</p>
         </div>
 
-        <div className="mt-6">
+        {/* メインメニュー */}
+        <div className="space-y-3 mb-6">
+          {/* イベント管理：大ボタン（最重要） */}
+          <Link href="/admin/events"
+            className="flex items-center gap-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl p-4 shadow-sm transition">
+            <span className="text-3xl">🗓️</span>
+            <div>
+              <p className="font-bold text-base">イベント管理</p>
+              <p className="text-xs text-emerald-100">開催期間の設定・コース構成の管理</p>
+            </div>
+            <span className="ml-auto text-emerald-200 text-xl">›</span>
+          </Link>
+
+          {/* サブメニュー：2列グリッド */}
+          <div className="grid grid-cols-2 gap-3">
+            <Link href="/admin/courses"
+              className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 hover:shadow-md transition">
+              <span className="text-3xl">📚</span>
+              <p className="font-bold text-gray-800 mt-2">コースライブラリ</p>
+              <p className="text-xs text-gray-400 mt-0.5">全コース一覧・管理</p>
+            </Link>
+            <Link href="/admin/qrcodes"
+              className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 hover:shadow-md transition">
+              <span className="text-3xl">🔲</span>
+              <p className="font-bold text-gray-800 mt-2">QRコード</p>
+              <p className="text-xs text-gray-400 mt-0.5">QRコードの発行・印刷</p>
+            </Link>
+            <Link href="/admin/stats"
+              className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 hover:shadow-md transition">
+              <span className="text-3xl">📊</span>
+              <p className="font-bold text-gray-800 mt-2">統計</p>
+              <p className="text-xs text-gray-400 mt-0.5">参加者・完走率・分析</p>
+            </Link>
+            <Link href="/admin/applications"
+              className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 hover:shadow-md transition">
+              <span className="text-3xl">🎁</span>
+              <p className="font-bold text-gray-800 mt-2">景品応募者</p>
+              <p className="text-xs text-gray-400 mt-0.5">応募一覧・当選管理</p>
+            </Link>
+          </div>
+
+          {/* テナント設定：小さめ */}
+          <Link href="/admin/settings"
+            className="flex items-center gap-3 bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3 hover:shadow-md transition">
+            <span className="text-xl">⚙️</span>
+            <div>
+              <p className="font-semibold text-gray-700 text-sm">テナント設定</p>
+              <p className="text-xs text-gray-400">データのインポート・エクスポート</p>
+            </div>
+            <span className="ml-auto text-gray-300">›</span>
+          </Link>
+        </div>
+
+        <div className="mt-2">
           <a href={participantUrl} className="block text-center text-sm text-gray-400 hover:text-gray-600">
             参加者画面を見る →
           </a>

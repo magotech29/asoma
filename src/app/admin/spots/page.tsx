@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 type Course = { id: string; name: string };
 type Spot = {
@@ -40,10 +40,13 @@ export default function AdminSpotsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [plusCode, setPlusCode] = useState("");
   const [plusCodeError, setPlusCodeError] = useState<string | null>(null);
+  const [backEventId, setBackEventId] = useState<string | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const load = () => {
+    const preselectedCourseId = searchParams.get("courseId");
     Promise.all([
       fetch("/api/admin/courses").then((r) => r.status === 401 ? null : r.json()),
       fetch("/api/admin/spots").then((r) => r.status === 401 ? null : r.json()),
@@ -51,12 +54,27 @@ export default function AdminSpotsPage() {
       if (!c) { router.replace("/admin/login"); return; }
       setCourses(c ?? []);
       setSpots(s ?? []);
-      if (c.length > 0 && !form.courseId) setForm((f) => ({ ...f, courseId: c[0].id }));
+      if (preselectedCourseId) {
+        setForm((f) => ({ ...f, courseId: preselectedCourseId }));
+      } else if (c.length > 0 && !form.courseId) {
+        setForm((f) => ({ ...f, courseId: c[0].id }));
+      }
       setLoading(false);
     });
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    const courseId = searchParams.get("courseId");
+    if (courseId) {
+      fetch(`/api/admin/courses`)
+        .then((r) => r.ok ? r.json() : [])
+        .then((crs: { id: string; eventId: string | null }[]) => {
+          const course = crs.find((c) => c.id === courseId);
+          if (course?.eventId) setBackEventId(course.eventId);
+        });
+    }
+    load();
+  }, []);
 
   const handlePlusCode = () => {
     setPlusCodeError(null);
@@ -143,7 +161,11 @@ export default function AdminSpotsPage() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <header className="bg-gray-800 text-white px-4 py-4 shadow flex items-center gap-3">
-        <Link href="/admin" className="text-gray-300 hover:text-white">← 戻る</Link>
+        {backEventId ? (
+          <Link href={`/admin/events/${backEventId}`} className="text-gray-300 hover:text-white text-sm">← イベントへ</Link>
+        ) : (
+          <Link href="/admin" className="text-gray-300 hover:text-white">← 戻る</Link>
+        )}
         <h1 className="text-lg font-bold flex-1">📍 スポット管理</h1>
         <a
           href="/api/admin/spots/export"
