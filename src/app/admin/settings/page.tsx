@@ -409,6 +409,12 @@ export default function AdminSettingsPage() {
               コース列: type=course, name, description, distance_km, duration_min, sort_order<br />
               スポット列: type=spot, name, description, address, lat, lng, instagram_url, website_url, sort_order, course_name
             </p>
+            <button
+              onClick={() => downloadCSV("/api/admin/export/bulk", "bulk-export.csv")}
+              className="w-full border border-emerald-400 text-emerald-700 bg-white hover:bg-emerald-50 py-2 rounded-lg text-sm font-semibold mb-2 transition"
+            >
+              ⬇ 現在のデータを一括CSVエクスポート（インポート用）
+            </button>
             <label className={`block w-full text-center border-2 border-dashed rounded-lg py-3 text-sm font-semibold cursor-pointer transition
               ${importingBulk ? "border-emerald-200 text-emerald-300" : "border-emerald-300 text-emerald-700 hover:border-emerald-500 hover:bg-emerald-100"}`}>
               {importingBulk ? "インポート中..." : "一括CSVファイルを選択"}
