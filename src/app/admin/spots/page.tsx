@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -23,7 +23,7 @@ type Spot = {
 
 const EMPTY_FORM = { courseId: "", name: "", description: "", address: "", lat: "", lng: "", instagramUrl: "", websiteUrl: "" };
 
-export default function AdminSpotsPage() {
+function AdminSpotsContent() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [spots, setSpots] = useState<Spot[]>([]);
   const [loading, setLoading] = useState(true);
@@ -421,5 +421,13 @@ export default function AdminSpotsPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function AdminSpotsPage() {
+  return (
+    <Suspense fallback={<div className="flex flex-col min-h-screen bg-gray-50"><p className="text-gray-400 text-center py-8">読み込み中...</p></div>}>
+      <AdminSpotsContent />
+    </Suspense>
   );
 }
