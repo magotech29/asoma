@@ -11,6 +11,6 @@ jobs:
     steps:
       - name: Trigger deploy webhook
         run: |
-          curl -s -X POST https://133.18.181.82:5002/deploy/asoma \
+          curl -s -k -X POST https://133.18.181.82:5002/deploy/asoma \
             -H "Authorization: Bearer ${{ secrets.DEPLOY_WEBHOOK_TOKEN }}" \
             --retry 3
