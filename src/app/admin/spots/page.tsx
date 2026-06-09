@@ -161,18 +161,17 @@ function AdminSpotsContent() {
     const idx = courseSpots.findIndex((s) => s.id === spotId);
     const swapIdx = direction === "up" ? idx - 1 : idx + 1;
     if (swapIdx < 0 || swapIdx >= courseSpots.length) return;
-    await Promise.all([
-      fetch("/api/admin/spots", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: courseSpots[idx].id, sortOrder: swapIdx }),
-      }),
-      fetch("/api/admin/spots", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: courseSpots[swapIdx].id, sortOrder: idx }),
-      }),
-    ]);
+    const reordered = [...courseSpots];
+    [reordered[idx], reordered[swapIdx]] = [reordered[swapIdx], reordered[idx]];
+    await Promise.all(
+      reordered.map((s, newIdx) =>
+        fetch("/api/admin/spots", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: s.id, sortOrder: newIdx }),
+        })
+      )
+    );
     load();
   };
 
