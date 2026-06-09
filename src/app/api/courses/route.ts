@@ -33,7 +33,10 @@ export async function GET() {
       with: { spots: { orderBy: (s, { asc }) => asc(s.sortOrder) } },
     });
 
-    return NextResponse.json(courseList);
+    return NextResponse.json({
+      courses: courseList,
+      eventImageUrl: activeEvent.imageUrl ?? null,
+    });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "";
     if (msg === "Tenant not found") {

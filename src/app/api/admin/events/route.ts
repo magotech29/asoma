@@ -50,13 +50,14 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     await requireAdminTenant();
-    const { id, name, description, startsAt, endsAt, isActive } = await req.json();
+    const { id, name, description, startsAt, endsAt, isActive, imageUrl } = await req.json();
     const updateData: Record<string, unknown> = {};
     if (name !== undefined) updateData.name = name;
     if (description !== undefined) updateData.description = description ?? null;
     if (startsAt !== undefined) updateData.startsAt = toDate(startsAt);
     if (endsAt !== undefined) updateData.endsAt = toDate(endsAt);
     if (isActive !== undefined) updateData.isActive = isActive;
+    if (imageUrl !== undefined) updateData.imageUrl = imageUrl ?? null;
 
     const [updated] = await db.update(events).set(updateData).where(eq(events.id, id)).returning();
     return NextResponse.json(updated);
