@@ -23,6 +23,7 @@ type ErrorKind = "expired" | "invalid" | "network" | "load";
 
 function HomeContent() {
   const [courses, setCourses] = useState<Course[]>([]);
+  const [eventImageUrl, setEventImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorKind, setErrorKind] = useState<ErrorKind | null>(null);
   const [tenantName, setTenantName] = useState<string | null>(null);
@@ -64,7 +65,10 @@ function HomeContent() {
           return r.json();
         })
         .then((data) => {
-          if (data) setCourses(Array.isArray(data) ? data : []);
+          if (data) {
+            setCourses(Array.isArray(data) ? data : (data.courses ?? []));
+            setEventImageUrl(data.eventImageUrl ?? null);
+          }
         })
         .catch(() => setErrorKind("load"))
         .finally(() => setLoading(false));
@@ -214,6 +218,17 @@ function HomeContent() {
         >
           🗺️ スタンプ地図帳を見る
         </Link>
+
+        {eventImageUrl && (
+          <div className="mb-6 rounded-2xl overflow-hidden shadow-sm">
+            <img
+              src={eventImageUrl}
+              alt="イベント画像"
+              loading="lazy"
+              className="w-full aspect-video object-cover"
+            />
+          </div>
+        )}
 
         <section>
           <h2 className="text-lg font-bold text-gray-800 mb-3">コース一覧</h2>

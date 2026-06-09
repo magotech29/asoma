@@ -49,6 +49,7 @@ export const events = pgTable("events", {
   startsAt: timestamp("starts_at"),
   endsAt: timestamp("ends_at"),
   isActive: boolean("is_active").notNull().default(true),
+  imageUrl: text("image_url"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

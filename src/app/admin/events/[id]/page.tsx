@@ -72,6 +72,7 @@ function DateTimePicker({ value, onChange, label }: {
 type Event = {
   id: string; name: string; description: string | null;
   startsAt: string | null; endsAt: string | null; isActive: boolean;
+  imageUrl: string | null;
 };
 type Spot = { id: string; name: string; sortOrder: number };
 type Course = {
@@ -109,6 +110,7 @@ export default function EventDetailPage() {
   const [copySourceId, setCopySourceId] = useState("");
   const [copying, setCopying] = useState(false);
   const [copyResult, setCopyResult] = useState<string | null>(null);
+  const [imageUploading, setImageUploading] = useState(false);
 
   const showToast = (ok: boolean, msg: string) => {
     setToast({ ok, msg });
@@ -245,6 +247,57 @@ export default function EventDetailPage() {
     } finally {
       setSavingCourse(false);
     }
+  };
+
+  const resizeImage = (file: File): Promise<Blob> =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const MAX_W = 1200, MAX_H = 630;
+        const ratio = Math.min(MAX_W / img.width, MAX_H / img.height, 1);
+        const w = Math.round(img.width * ratio);
+        const h = Math.round(img.height * ratio);
+        const canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+        canvas.toBlob((b) => b ? resolve(b) : reject(new Error("resize failed")), "image/jpeg", 0.82);
+      };
+      img.onerror = reject;
+      img.src = url;
+    });
+
+  const handleImageUpload = async (file: File) => {
+    setImageUploading(true);
+    try {
+      const blob = await resizeImage(file);
+      const fd = new FormData();
+      fd.append("eventId", eventId);
+      fd.append("image", blob, "image.jpg");
+      const res = await fetch("/api/admin/events/image", { method: "POST", body: fd });
+      if (res.ok) {
+        showToast(true, "画像をアップロードしました");
+        await load();
+      } else {
+        showToast(false, "アップロードに失敗しました");
+      }
+    } catch {
+      showToast(false, "エラーが発生しました");
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
+  const handleDeleteImage = async () => {
+    if (!confirm("画像を削除しますか？")) return;
+    const res = await fetch("/api/admin/events/image", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ eventId }),
+    });
+    if (res.ok) { showToast(true, "画像を削除しました"); await load(); }
+    else showToast(false, "削除に失敗しました");
   };
 
   const handleDeleteCourse = async (id: string) => {
@@ -393,6 +446,42 @@ export default function EventDetailPage() {
                 </button>
               </div>
             </>
+          )}
+        </div>
+
+        {/* ── イベント画像 ── */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+          <p className="text-xs font-semibold text-gray-500 mb-3">🖼️ イベント画像</p>
+          {event.imageUrl ? (
+            <div>
+              <img
+                src={event.imageUrl}
+                alt="イベント画像"
+                className="w-full aspect-video object-cover rounded-lg mb-3"
+              />
+              <div className="flex gap-2">
+                <label className={`flex-1 text-center text-xs border border-gray-200 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-50 cursor-pointer ${imageUploading ? "opacity-50 pointer-events-none" : ""}`}>
+                  {imageUploading ? "アップロード中..." : "🔄 画像を変更"}
+                  <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f); e.target.value = ""; }} />
+                </label>
+                <button onClick={handleDeleteImage} className="text-xs border border-red-200 text-red-500 px-3 py-1.5 rounded-lg hover:bg-red-50">
+                  削除
+                </button>
+              </div>
+            </div>
+          ) : (
+            <label className={`flex flex-col items-center justify-center w-full aspect-video border-2 border-dashed border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition ${imageUploading ? "opacity-50 pointer-events-none" : ""}`}>
+              {imageUploading ? (
+                <p className="text-sm text-gray-400">アップロード中...</p>
+              ) : (
+                <>
+                  <p className="text-2xl mb-1">📷</p>
+                  <p className="text-sm text-gray-500 font-semibold">画像を選択</p>
+                  <p className="text-xs text-gray-400 mt-1">JPG / PNG / WEBP（自動でリサイズ）</p>
+                </>
+              )}
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f); e.target.value = ""; }} />
+            </label>
           )}
         </div>
 
