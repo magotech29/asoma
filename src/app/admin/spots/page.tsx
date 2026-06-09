@@ -154,6 +154,28 @@ function AdminSpotsContent() {
     }
   };
 
+  const handleMove = async (spotId: string, courseId: string, direction: "up" | "down") => {
+    const courseSpots = spots
+      .filter((s) => s.courseId === courseId)
+      .sort((a, b) => a.sortOrder - b.sortOrder);
+    const idx = courseSpots.findIndex((s) => s.id === spotId);
+    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= courseSpots.length) return;
+    await Promise.all([
+      fetch("/api/admin/spots", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: courseSpots[idx].id, sortOrder: swapIdx }),
+      }),
+      fetch("/api/admin/spots", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: courseSpots[swapIdx].id, sortOrder: idx }),
+      }),
+    ]);
+    load();
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm("このスポットを削除しますか？")) return;
     await fetch("/api/admin/spots", {
@@ -384,7 +406,7 @@ function AdminSpotsContent() {
                     )}
                   </div>
                   <ul className="space-y-2">
-                    {courseSpots.map((s) => (
+                    {courseSpots.map((s, i) => (
                       <li
                         key={s.id}
                         className={`bg-white rounded-xl border shadow-sm px-4 py-3 transition ${
@@ -393,9 +415,12 @@ function AdminSpotsContent() {
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-gray-800 truncate">{s.name}</p>
-                            {s.address && <p className="text-xs text-gray-400 truncate mt-0.5">{s.address}</p>}
-                            <div className="flex items-center gap-3 mt-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-gray-400 font-mono w-5 shrink-0">{i + 1}.</span>
+                              <p className="font-semibold text-gray-800 truncate">{s.name}</p>
+                            </div>
+                            {s.address && <p className="text-xs text-gray-400 truncate mt-0.5 ml-7">{s.address}</p>}
+                            <div className="flex items-center gap-3 mt-1 ml-7">
                               {s.lat && s.lng && (
                                 <span className="text-xs text-gray-300">📍 {s.lat}, {s.lng}</span>
                               )}
@@ -407,7 +432,23 @@ function AdminSpotsContent() {
                               )}
                             </div>
                           </div>
-                          <div className="flex gap-3 ml-3 shrink-0">
+                          <div className="flex items-center gap-2 ml-3 shrink-0">
+                            {mode === "hidden" && (
+                              <div className="flex flex-col gap-0.5">
+                                <button
+                                  onClick={() => handleMove(s.id, s.courseId, "up")}
+                                  disabled={i === 0}
+                                  className="text-xs text-gray-400 hover:text-gray-700 disabled:opacity-20 leading-none px-1"
+                                  title="上へ"
+                                >▲</button>
+                                <button
+                                  onClick={() => handleMove(s.id, s.courseId, "down")}
+                                  disabled={i === courseSpots.length - 1}
+                                  className="text-xs text-gray-400 hover:text-gray-700 disabled:opacity-20 leading-none px-1"
+                                  title="下へ"
+                                >▼</button>
+                              </div>
+                            )}
                             <button onClick={() => openEdit(s)} className="text-sm text-blue-500 hover:underline">編集</button>
                             <button onClick={() => handleDelete(s.id)} className="text-sm text-red-400 hover:underline">削除</button>
                           </div>

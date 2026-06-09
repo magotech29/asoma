@@ -61,6 +61,20 @@ export async function PUT(req: NextRequest) {
   }
 }
 
+export async function PATCH(req: NextRequest) {
+  try {
+    await requireAdminTenant();
+    const { id, sortOrder } = await req.json();
+    const [updated] = await db.update(spots).set({ sortOrder }).where(eq(spots.id, id)).returning();
+    return NextResponse.json(updated);
+  } catch (e: unknown) {
+    if (e instanceof Error && e.message === "Unauthorized")
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    console.error(e);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
 export async function DELETE(req: NextRequest) {
   try {
     await requireAdminTenant();
