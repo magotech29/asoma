@@ -36,6 +36,9 @@ function AdminSpotsContent() {
   const [toast, setToast] = useState<{ ok: boolean; msg: string } | null>(null);
   const [backEventId, setBackEventId] = useState<string | null>(null);
   const [preselectedCourseId, setPreselectedCourseId] = useState<string | null>(null);
+  const [sortingCourseId, setSortingCourseId] = useState<string | null>(null);
+  const [sortDraft, setSortDraft] = useState<Record<string, string>>({});
+  const [sortSaving, setSortSaving] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -151,6 +154,43 @@ function AdminSpotsContent() {
       load();
     } else {
       showToast(false, "保存に失敗しました");
+    }
+  };
+
+  const enterSortMode = (courseId: string, courseSpots: Spot[]) => {
+    setSortingCourseId(courseId);
+    const draft: Record<string, string> = {};
+    courseSpots.forEach((s, i) => { draft[s.id] = String(i + 1); });
+    setSortDraft(draft);
+  };
+
+  const cancelSortMode = () => {
+    setSortingCourseId(null);
+    setSortDraft({});
+  };
+
+  const saveSortOrder = async (courseSpots: Spot[]) => {
+    setSortSaving(true);
+    try {
+      const ordered = [...courseSpots].sort((a, b) => {
+        const na = parseInt(sortDraft[a.id] ?? "0") || 0;
+        const nb = parseInt(sortDraft[b.id] ?? "0") || 0;
+        return na - nb;
+      });
+      await Promise.all(
+        ordered.map((s, idx) =>
+          fetch("/api/admin/spots", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: s.id, sortOrder: idx }),
+          })
+        )
+      );
+      setSortingCourseId(null);
+      setSortDraft({});
+      load();
+    } finally {
+      setSortSaving(false);
     }
   };
 
@@ -395,13 +435,23 @@ function AdminSpotsContent() {
                       </span>
                       <span className="text-xs text-gray-400">{courseSpots.length}件</span>
                     </div>
-                    {mode === "hidden" && (
-                      <button
-                        onClick={() => openAdd(course.id)}
-                        className="text-xs text-emerald-600 border border-emerald-200 hover:bg-emerald-50 px-2 py-1 rounded-lg font-semibold"
-                      >
-                        ＋ 追加
-                      </button>
+                    {mode === "hidden" && sortingCourseId !== course.id && (
+                      <div className="flex gap-2">
+                        {courseSpots.length >= 2 && (
+                          <button
+                            onClick={() => enterSortMode(course.id, courseSpots)}
+                            className="text-xs text-gray-500 border border-gray-200 hover:bg-gray-50 px-2 py-1 rounded-lg font-semibold"
+                          >
+                            並び替え
+                          </button>
+                        )}
+                        <button
+                          onClick={() => openAdd(course.id)}
+                          className="text-xs text-emerald-600 border border-emerald-200 hover:bg-emerald-50 px-2 py-1 rounded-lg font-semibold"
+                        >
+                          ＋ 追加
+                        </button>
+                      </div>
                     )}
                   </div>
                   <ul className="space-y-2">
@@ -409,52 +459,89 @@ function AdminSpotsContent() {
                       <li
                         key={s.id}
                         className={`bg-white rounded-xl border shadow-sm px-4 py-3 transition ${
-                          mode === "edit" && editingSpot?.id === s.id ? "border-amber-400 ring-1 ring-amber-300" : "border-gray-100"
+                          sortingCourseId === course.id
+                            ? "border-blue-200"
+                            : mode === "edit" && editingSpot?.id === s.id
+                            ? "border-amber-400 ring-1 ring-amber-300"
+                            : "border-gray-100"
                         }`}
                       >
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-gray-400 font-mono w-5 shrink-0">{i + 1}.</span>
-                              <p className="font-semibold text-gray-800 truncate">{s.name}</p>
-                            </div>
-                            {s.address && <p className="text-xs text-gray-400 truncate mt-0.5 ml-7">{s.address}</p>}
-                            <div className="flex items-center gap-3 mt-1 ml-7">
-                              {s.lat && s.lng && (
-                                <span className="text-xs text-gray-300">📍 {s.lat}, {s.lng}</span>
-                              )}
-                              {s.instagramUrl && (
-                                <a href={s.instagramUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-purple-500 hover:underline">📷 IG</a>
-                              )}
-                              {s.websiteUrl && (
-                                <a href={s.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline">🌐 Web</a>
-                              )}
-                            </div>
+                        {sortingCourseId === course.id ? (
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="number"
+                              min={1}
+                              max={courseSpots.length}
+                              value={sortDraft[s.id] ?? ""}
+                              onChange={(e) => setSortDraft({ ...sortDraft, [s.id]: e.target.value })}
+                              className="w-12 border border-blue-300 rounded-lg px-2 py-1.5 text-center text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-400"
+                            />
+                            <p className="font-semibold text-gray-800 truncate flex-1">{s.name}</p>
+                            {s.address && <p className="text-xs text-gray-400 truncate hidden sm:block">{s.address}</p>}
                           </div>
-                          <div className="flex items-center gap-2 ml-3 shrink-0">
-                            {mode === "hidden" && (
-                              <div className="flex flex-col gap-0.5">
-                                <button
-                                  onClick={() => handleMove(s.id, s.courseId, "up")}
-                                  disabled={i === 0}
-                                  className="text-xs text-gray-400 hover:text-gray-700 disabled:opacity-20 leading-none px-1"
-                                  title="上へ"
-                                >▲</button>
-                                <button
-                                  onClick={() => handleMove(s.id, s.courseId, "down")}
-                                  disabled={i === courseSpots.length - 1}
-                                  className="text-xs text-gray-400 hover:text-gray-700 disabled:opacity-20 leading-none px-1"
-                                  title="下へ"
-                                >▼</button>
+                        ) : (
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-gray-400 font-mono w-5 shrink-0">{i + 1}.</span>
+                                <p className="font-semibold text-gray-800 truncate">{s.name}</p>
                               </div>
-                            )}
-                            <button onClick={() => openEdit(s)} className="text-sm text-blue-500 hover:underline">編集</button>
-                            <button onClick={() => handleDelete(s.id)} className="text-sm text-red-400 hover:underline">削除</button>
+                              {s.address && <p className="text-xs text-gray-400 truncate mt-0.5 ml-7">{s.address}</p>}
+                              <div className="flex items-center gap-3 mt-1 ml-7">
+                                {s.lat && s.lng && (
+                                  <span className="text-xs text-gray-300">📍 {s.lat}, {s.lng}</span>
+                                )}
+                                {s.instagramUrl && (
+                                  <a href={s.instagramUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-purple-500 hover:underline">📷 IG</a>
+                                )}
+                                {s.websiteUrl && (
+                                  <a href={s.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline">🌐 Web</a>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 ml-3 shrink-0">
+                              {mode === "hidden" && (
+                                <div className="flex flex-col gap-0.5">
+                                  <button
+                                    onClick={() => handleMove(s.id, s.courseId, "up")}
+                                    disabled={i === 0}
+                                    className="text-xs text-gray-400 hover:text-gray-700 disabled:opacity-20 leading-none px-1"
+                                    title="上へ"
+                                  >▲</button>
+                                  <button
+                                    onClick={() => handleMove(s.id, s.courseId, "down")}
+                                    disabled={i === courseSpots.length - 1}
+                                    className="text-xs text-gray-400 hover:text-gray-700 disabled:opacity-20 leading-none px-1"
+                                    title="下へ"
+                                  >▼</button>
+                                </div>
+                              )}
+                              <button onClick={() => openEdit(s)} className="text-sm text-blue-500 hover:underline">編集</button>
+                              <button onClick={() => handleDelete(s.id)} className="text-sm text-red-400 hover:underline">削除</button>
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </li>
                     ))}
                   </ul>
+                  {sortingCourseId === course.id && (
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        onClick={() => saveSortOrder(courseSpots)}
+                        disabled={sortSaving}
+                        className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white font-bold py-2 rounded-xl text-sm transition"
+                      >
+                        {sortSaving ? "保存中..." : "✓ 並び順を保存"}
+                      </button>
+                      <button
+                        onClick={cancelSortMode}
+                        disabled={sortSaving}
+                        className="px-4 bg-gray-100 text-gray-600 py-2 rounded-xl text-sm hover:bg-gray-200"
+                      >
+                        キャンセル
+                      </button>
+                    </div>
+                  )}
                 </section>
             ))}
           </div>
