@@ -10,7 +10,7 @@ export async function GET() {
     const list = await db.query.courses.findMany({
       where: eq(courses.tenantId, tenant.id),
       orderBy: (c, { asc }) => asc(c.sortOrder),
-      with: { spots: true },
+      with: { spots: { orderBy: (s, { asc }) => asc(s.sortOrder) } },
     });
     return NextResponse.json(list);
   } catch (e: unknown) {

@@ -30,7 +30,7 @@ export async function GET() {
         eq(courses.eventId, activeEvent.id)
       ),
       orderBy: (c, { asc }) => asc(c.sortOrder),
-      with: { spots: true },
+      with: { spots: { orderBy: (s, { asc }) => asc(s.sortOrder) } },
     });
 
     return NextResponse.json(courseList);
