@@ -280,10 +280,12 @@ export default function EventDetailPage() {
         showToast(true, "画像をアップロードしました");
         await load();
       } else {
-        showToast(false, "アップロードに失敗しました");
+        const data = await res.json().catch(() => ({}));
+        showToast(false, data.error ?? "アップロードに失敗しました");
       }
-    } catch {
-      showToast(false, "エラーが発生しました");
+    } catch (e) {
+      console.error("Image upload error:", e);
+      showToast(false, e instanceof Error ? e.message : "エラーが発生しました");
     } finally {
       setImageUploading(false);
     }

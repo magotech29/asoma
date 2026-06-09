@@ -49,8 +49,8 @@ export async function POST(req: NextRequest) {
 
     if (!uploadRes.ok) {
       const err = await uploadRes.text();
-      console.error("Storage upload failed:", err);
-      return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+      console.error("Storage upload failed:", uploadRes.status, err);
+      return NextResponse.json({ error: `Storage error ${uploadRes.status}: ${err}` }, { status: 500 });
     }
 
     const imageUrl = `${supabaseUrl}/storage/v1/object/public/${BUCKET}/${path}`;
